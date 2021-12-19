@@ -400,8 +400,11 @@ int main()
 
 	while (true)
 	{
-		// this clears the screen so the board draws over itself    
+		// this clears the screen so the board draws over itself
+        // they work the same, CLS is for Windows only
 		std::wcout << L"\x1B[2J\x1B[H";
+        //system("CLS");
+
 		std::wcout << L"Generation " << board->GetGeneration() << std::endl;
 		std::wcout << L"Hit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
 		std::wcout << (*board) << std::endl;
