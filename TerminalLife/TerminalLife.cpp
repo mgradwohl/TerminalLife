@@ -584,12 +584,11 @@ std::wostream& operator<<(std::wostream& stream, Cell& cell)
 
 std::ostream& operator<<(std::ostream& stream, Board& board)
 {
-    Cell cell;
     for (int y = 0; y < board.Height(); y++)
     {
         for (int x = 0; x < board.Width(); x++)
         {
-            cell = board.GetCell(x, y);
+            Cell& cell = board.GetCell(x, y);
             std::cout << cell;
         }
         std::cout << std::endl;
@@ -599,12 +598,11 @@ std::ostream& operator<<(std::ostream& stream, Board& board)
 
 std::wostream& operator<<(std::wostream& stream, Board& board)
 {
-    Cell cell;
     for (int y = 0; y < board.Height(); y++)
     {
         for (int x = 0; x < board.Width(); x++)
         {
-            cell = board.GetCell(x, y);
+            Cell& cell = board.GetCell(x, y);
             std::wcout << cell;
         }
         std::wcout << std::endl;
@@ -638,12 +636,12 @@ int main()
 		if (std::cin.get() == 'n')
 			break;
 
-//	    board->Conway();
-//      board->Seeds();
-//      board->BriansBrain();
-//      board->Highlife();
-//      board->LifeWithoutDeath();
-        board->DayAndNight();
+		board->Conway();
+		//board->Seeds();
+		//board->BriansBrain();
+		//board->Highlife();
+		//board->LifeWithoutDeath();
+		//board->DayAndNight();
 	}
 	std::wcout << L"Thanks for the simulation" << std::endl;
 }
