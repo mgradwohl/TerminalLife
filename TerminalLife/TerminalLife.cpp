@@ -62,7 +62,7 @@ public:
         return _state;
     }
 
-    bool IsAlive()
+    bool IsAlive() const
     {
         if (_state == Cell::State::Live || _state == Cell::State::Dying)
         {
@@ -71,7 +71,7 @@ public:
         return false;
     }
 
-    bool IsDead()
+    bool IsDead() const
     {
         if (_state == Cell::State::Dead || _state == Cell::State::Born)
         {
@@ -80,7 +80,7 @@ public:
         return false;
     }
 
-    const char* GetStateString()
+    const char* GetStateString() const
     {
         switch (_state)
         {
@@ -115,7 +115,7 @@ public:
     //    }
     //}
 
-    const wchar_t* GetWideStateString()
+    const wchar_t* GetWideStateString() const
     {
         switch (_state)
         {
@@ -401,7 +401,7 @@ int main()
 	while (true)
 	{
 		// this clears the screen so the board draws over itself    
-		std::cout << "\x1B[2J\x1B[H";
+		std::wcout << L"\x1B[2J\x1B[H";
 		std::wcout << L"Generation " << board->GetGeneration() << std::endl;
 		std::wcout << L"Hit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
 		std::wcout << (*board) << std::endl;
