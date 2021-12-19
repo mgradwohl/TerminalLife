@@ -106,7 +106,7 @@ public:
         }
     }
 
-    //Not sure why this doesn't work. GRAFIX!!! would be cool
+    // Not sure why this doesn't work. GRAFIX!!! would be cool
     //const wchar_t* GetWideStateString()
     //{
     //    switch (_state)
@@ -379,10 +379,10 @@ public:
 
     void Conway()
     {
-        //Any live cell with two or three live neighbours survives.
-        //Any dead cell with three live neighbours becomes a live cell.
-        //All other live cells die in the next generation. Similarly, all other dead cells stay dead.
-        //Cells that hit 100 'die' (this is currently commented out for testing)
+        // Any live cell with two or three live neighbours survives.
+        // Any dead cell with three live neighbours becomes a live cell.
+        // All other live cells die in the next generation. Similarly, all other dead cells stay dead.
+        // Cells that hit 100 'die' (this is currently commented out for testing)
 
         int count;
         for (int y = 0; y < Height(); y++)
@@ -447,11 +447,10 @@ public:
 
     void LifeWithoutDeath()
     {
-        //https://en.wikipedia.org/wiki/Life_without_Death
-        //every cell that was alive in the previous pattern remains alive,
-        //every dead cell that has exactly 3 live neighbors becomes alive itself
-        //and every other dead cell remains dead.
-        //B3/S012345678
+        // https://en.wikipedia.org/wiki/Life_without_Death
+        // every cell that was alive in the previous pattern remains alive,
+        // every dead cell that has exactly 3 live neighbors becomes alive itself
+        // and every other dead cell remains dead. B3/S012345678
 
         int count;
         for (int y = 0; y < Height(); y++)
@@ -477,8 +476,10 @@ public:
 
     void Highlife()
     {
-        //https://en.wikipedia.org/wiki/Highlife_(cellular_automaton)
-        //the rule B36 / S23; that is, a cell is born if it has 3 or 6 neighbors and survives if it has 2 or 3 neighbors.
+        // https://en.wikipedia.org/wiki/Highlife_(cellular_automaton)
+        // the rule B36 / S23; that is, a cell is born if it has 3 or 6 neighbors
+        //and survives if it has 2 or 3 neighbors.
+
         int count;
         for (int y = 0; y < Height(); y++)
         {
@@ -508,10 +509,11 @@ public:
 
     void Seeds()
     {
-        //https://en.wikipedia.org/wiki/Seeds_(cellular_automaton)
-        //In each time step, a cell turns on or is "born" if it was off or "dead"
-        //but had exactly two neighbors that were on;
-        //all other cells turn off. It is described by the rule B2 / S.[1]
+        // https://en.wikipedia.org/wiki/Seeds_(cellular_automaton)
+        // In each time step, a cell turns on or is "born" if it was off or "dead"
+        // but had exactly two neighbors that were on;
+        // all other cells turn off. It is described by the rule B2 / S
+
         int count;
         for (int y = 0; y < Height(); y++)
         {
@@ -535,11 +537,12 @@ public:
 
     void BriansBrain()
     {
-        //https://en.wikipedia.org/wiki/Brian%27s_Brain
+        // https://en.wikipedia.org/wiki/Brian%27s_Brain
         // In each time step, a cell turns on if it was off but had exactly two neighbors that were on,
         // just like the birth rule for Seeds. All cells that were "on" go into the "dying" state,
         // which is not counted as an "on" cell in the neighbor count, and prevents any cell from
         // being born there. Cells that were in the dying state go into the off state.
+
         int count;
         for (int y = 0; y < Height(); y++)
         {
