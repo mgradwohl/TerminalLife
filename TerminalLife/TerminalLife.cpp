@@ -182,10 +182,10 @@ public:
             _state = Cell::State::Live;
         }
 
-        //if (_state == Cell::State::Dying)
-        //{
-        //    _state = Cell::State::Dead;
-        //}
+        if (_state == Cell::State::Dying)
+        {
+            _state = Cell::State::Dead;
+        }
 
         _age++;
         // Set a positive int to kill old cells when they reach age==int
@@ -637,11 +637,11 @@ int main()
 			break;
 
 		board->Conway();
-		//board->Seeds();
-		//board->BriansBrain();
-		//board->Highlife();
-		//board->LifeWithoutDeath();
-		//board->DayAndNight();
+		// board->Seeds();
+		// board->BriansBrain();
+		// board->Highlife();
+		// board->LifeWithoutDeath();
+		// board->DayAndNight();
 	}
 	std::wcout << L"Thanks for the simulation" << std::endl;
 }
