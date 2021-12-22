@@ -641,7 +641,7 @@ public:
 
 std::ostream& operator<<(std::ostream& stream, Cell& cell)
 {
-    std::wcout << cell.GetStateString();
+    std::cout << cell.GetStateString();
     return stream;
 }
 
@@ -683,8 +683,6 @@ int main()
 {
 	// could ask the user for board size
 	// and at what age, if any, they want to old cells to die
-    // if you make a big board, do it on the heap
-
     // TODO make board._board a heap allocated variable (it's the big thing)
     Board board(75, 50);
 
@@ -693,13 +691,31 @@ int main()
 	std::wcout << L"Randomly populating cells for " << n << " generations" << std::endl;
 	board.RandomizeBoard(n);
 
-	// simulation loop
+    // using example from https://en.cppreference.com/w/cpp/utility/functional/bind
+    // auto f3 = std::bind(&Foo::print_sum, &foo, 95, _1);
+
+    //this works
+    //void UpdateBoard(auto F)
+    //void ConwayFunction(Cell & cell)
+    //auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
+
+    //this works too
+    //std::function<void(Cell& cell)> C = [&](Cell& cell) -> void
+    //{
+    //    board.ConwayFunction(cell);
+    //};
+
+    //this should work but doesn't
+    //auto C = std::mem_fn(&Board::ConwayFunction);
+
+    auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
+
+    // simulation loop
     while (true)
 	{
 		// this clears the screen so the board draws over itself
-        // they work the same, CLS is for Windows only
 		std::wcout << L"\x1B[2J\x1B[H";
-        //system("CLS");
+        //system("CLS"); // Windows only
 
 		std::wcout << L"Generation " << board.GetGeneration() << std::endl;
 		std::wcout << L"Hit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
@@ -708,18 +724,6 @@ int main()
 		if (std::cin.get() == 'n')
 			break;
 
-        // using example from https://en.cppreference.com/w/cpp/utility/functional/bind
-        // auto f3 = std::bind(&Foo::print_sum, &foo, 95, _1);
-
-        //this should work but doesn't
-        //const auto C = std::mem_fn(&Board::ConwayFunction);
-
-        //this works
-        //void UpdateBoard(auto F)
-        //void ConwayFunction(Cell & cell)
-        //auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
-
-        auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
         board.UpdateBoard(C);
 
         //Old way where the loop is copy pasted everywhere
