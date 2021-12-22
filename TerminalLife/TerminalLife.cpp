@@ -708,25 +708,18 @@ int main()
 		if (std::cin.get() == 'n')
 			break;
 
-        Cell& temp = board.GetCurrentCell();
         // using example from https://en.cppreference.com/w/cpp/utility/functional/bind
         // auto f3 = std::bind(&Foo::print_sum, &foo, 95, _1);
-        // void UpdateBoard(std::function<void(Cell& cell)>& F)
-        // void ConwayFunction(Cell & cell)
 
-        // these didn't work
-        //std::function<void (Cell& cell)> F = std::bind(&Board::ConwayFunction, &board, temp);
-        //std::function<void(Cell& cell)> F = [&](Cell& cell) -> void {board.ConwayFunction(cell); };
-        //auto F = std::bind(&Board::ConwayFunction, &board, temp);
+        //this should work but doesn't
+        //const auto C = std::mem_fn(&Board::ConwayFunction);
 
         //this works
         //void UpdateBoard(auto F)
-        //auto Conway = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
+        //void ConwayFunction(Cell & cell)
+        //auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
 
         auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
-
-        // for debugging
-        //F(temp);
         board.UpdateBoard(C);
 
         //Old way where the loop is copy pasted everywhere
