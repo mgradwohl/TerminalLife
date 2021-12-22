@@ -1,6 +1,7 @@
 ﻿// TerminalLife.cpp : This file contains the 'main' function. Program execution begins and ends there.
 #include <iostream>
 #include <vector>
+#include <functional>
 
 class Cell
 {
@@ -14,23 +15,27 @@ public:
     enum class State { Dead, Born, Live, Dying };
 
 private:
-    int _x, _y;
-      State _state;
-    int _age;
+    int _x, _y, _age, _n;
+    State _state;
 
 public:
     Cell()
-        : _state(State::Dead), _age(0), _x(0), _y(0)
-    {}
+        : _state(State::Dead), _age(0), _x(0), _y(0), _n(0)
+    {
+        //std::wcout << "Cell constructor Cell()" << std::endl;
+    }
 
     Cell(int x, int y)
-        : _state(State::Dead), _age(0), _x(x), _y(y)
-    {}
+        : _state(State::Dead), _age(0), _x(x), _y(y), _n(0)
+    {
+        //std::wcout << "Cell constructor Cell(x,y)" << std::endl;
+    }
 
     Cell(State state)
-        : _state(state), _age(0), _x(0), _y(0)
+        : _state(state), _age(0), _x(0), _y(0), _n(0)
     {
         if (_state == Cell::State::Born) _age = 0;
+        //std::wcout << "Cell constructor Cell(state)" << std::endl;
     }
 
     ~Cell()
@@ -50,6 +55,16 @@ public:
     int Y() const
     {
         return _y;
+    }
+
+    int N() const
+    {
+        return _n;
+    }
+
+    void SetN(int n)
+    {
+        _n = n;
     }
 
     void SetState(State state)
@@ -210,14 +225,17 @@ typedef std::vector<std::vector<Cell> > Vector2D;
 class Board
 {
 private:
+    // if I allocated this on the heap, I could get the size right with resize
     Vector2D _board;
     int _width, _height;
     int _generation;
+    int _x, _y;
 
 public:
     Board(int width, int height)
-        : _width(width), _height(height), _generation(0)
+        : _width(width), _height(height), _generation(0), _x(0), _y(0)
     {
+        std::wcout << "Board constructor Board(w, h)" << std::endl;
         _board.resize(_height);
         for (int y = 0; y < _height; y++)
         {
@@ -228,6 +246,11 @@ public:
                 _board[y][x].SetXY(x, y);
             }
         }
+    }
+
+    Board(const Board& b)
+    {
+        std::wcout << "Board copy constructor" << std::endl;
     }
 
     int GetGeneration() const
@@ -255,6 +278,11 @@ public:
     {
         // no bounds checking
         return _board[y][x];
+    }
+
+    Cell& GetCurrentCell()
+    {
+        return _board[_y][_x];
     }
 
     // used these for debugging
@@ -302,6 +330,8 @@ public:
         if (GetCell(x + xoleft, y).IsAlive()) count++;
         if (GetCell(x + xoright, y).IsAlive()) count++;
 
+        cell.SetN(count);
+
         return count;
     }
 
@@ -329,6 +359,7 @@ public:
         if (GetCell(x + xoleft, y).IsAliveNotDying()) count++;
         if (GetCell(x + xoright, y).IsAliveNotDying()) count++;
 
+        cell.SetN(count);
         return count;
     }
 
@@ -374,6 +405,44 @@ public:
                 cell.SetState(Cell::State::Born);
             }
             NextGeneration();
+        }
+    }
+
+    // does not work:
+    //void UpdateBoard(std::function<void(Cell& cell)>& F)
+    void UpdateBoard(auto F)
+    {
+        for (int y = 0; y < Height(); y++)
+        {
+            for (int x = 0; x < Width(); x++)
+            {
+                Cell& cc = GetCell(x, y);
+                F(cc);
+            }
+        }
+        NextGeneration();
+    }
+
+    void ConwayFunction(Cell& cell)
+    {
+        // Any live cell with two or three live neighbours survives.
+        // Any dead cell with three live neighbours becomes a live cell.
+        // All other live cells die in the next generation. Similarly, all other dead cells stay dead.
+
+        CountLiveNeighbors(cell);
+        if (cell.IsAlive() && cell.N() >= 2 && cell.N() <= 3)
+        {
+            cell.SetState(Cell::State::Live);
+        }
+        else
+        if (cell.IsDead() && cell.N() == 3)
+        {
+            cell.SetState(Cell::State::Born);
+        }
+        else
+        if (cell.IsAlive())
+        {
+            cell.SetState(Cell::State::Dying);
         }
     }
 
@@ -615,33 +684,58 @@ int main()
 	// could ask the user for board size
 	// and at what age, if any, they want to old cells to die
     // if you make a big board, do it on the heap
-    auto board = std::make_unique<Board>(75,50);
+
+    // TODO make board._board a heap allocated variable (it's the big thing)
+    Board board(75, 50);
 
     // Randomly fill  spots for n 'generations'
-	int n = board->Width() * board->Height() / 2;
+	int n = board.Width() * board.Height() / 2;
 	std::wcout << L"Randomly populating cells for " << n << " generations" << std::endl;
-	board->RandomizeBoard(n);
+	board.RandomizeBoard(n);
 
-	while (true)
+	// simulation loop
+    while (true)
 	{
 		// this clears the screen so the board draws over itself
         // they work the same, CLS is for Windows only
 		std::wcout << L"\x1B[2J\x1B[H";
         //system("CLS");
 
-		std::wcout << L"Generation " << board->GetGeneration() << std::endl;
+		std::wcout << L"Generation " << board.GetGeneration() << std::endl;
 		std::wcout << L"Hit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
-		std::wcout << (*board) << std::endl;
+		std::wcout << board << std::endl;
 
 		if (std::cin.get() == 'n')
 			break;
 
-		board->Conway();
-		// board->Seeds();
-		// board->BriansBrain();
-		// board->Highlife();
-		// board->LifeWithoutDeath();
-		// board->DayAndNight();
+        Cell& temp = board.GetCurrentCell();
+        // using example from https://en.cppreference.com/w/cpp/utility/functional/bind
+        // auto f3 = std::bind(&Foo::print_sum, &foo, 95, _1);
+        // void UpdateBoard(std::function<void(Cell& cell)>& F)
+        // void ConwayFunction(Cell & cell)
+
+        // these didn't work
+        //std::function<void (Cell& cell)> F = std::bind(&Board::ConwayFunction, &board, temp);
+        //std::function<void(Cell& cell)> F = [&](Cell& cell) -> void {board.ConwayFunction(cell); };
+        //auto F = std::bind(&Board::ConwayFunction, &board, temp);
+
+        //this works
+        //void UpdateBoard(auto F)
+        //auto Conway = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
+
+        auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
+
+        // for debugging
+        //F(temp);
+        board.UpdateBoard(C);
+
+        //Old way where the loop is copy pasted everywhere
+        //board.Conway();
+		//board.Seeds();
+		//board.BriansBrain();
+		//board.Highlife();
+		//board.LifeWithoutDeath();
+		//board.DayAndNight();
 	}
 	std::wcout << L"Thanks for the simulation" << std::endl;
 }
