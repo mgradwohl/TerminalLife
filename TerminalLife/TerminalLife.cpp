@@ -706,6 +706,7 @@ int main()
     //};
 
     //this should work but doesn't
+    // https://en.cppreference.com/w/cpp/utility/functional/mem_fn
     //auto C = std::mem_fn(&Board::ConwayFunction);
 
     auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
