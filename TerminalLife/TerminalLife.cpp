@@ -1,4 +1,4 @@
-﻿// TerminalLife.cpp : This file contains the 'main' function. Program execution begins and ends there.
+﻿// TerminalLife.cpp
 #include <iostream>
 #include <vector>
 #include <functional>
@@ -65,6 +65,11 @@ public:
     void SetN(int n)
     {
         _n = n;
+    }
+
+    int Age() const
+    {
+        return _age;
     }
 
     void SetState(State state)
@@ -156,11 +161,6 @@ public:
         }
     }
 
-    int GetAge() const
-    {
-        return _age;
-    }
-
     void NextGeneration()
     {
         if (_state == Cell::State::Dead)
@@ -249,11 +249,12 @@ public:
     }
 
     Board(const Board& b)
+        : _width(b._width), _height(b._height), _generation(b._generation), _x(b._x), _y(b._y)
     {
         std::wcout << "Board copy constructor" << std::endl;
     }
 
-    int GetGeneration() const
+    int Generation() const
     {
         return _generation;
     }
@@ -280,7 +281,7 @@ public:
         return _board[y][x];
     }
 
-    Cell& GetCurrentCell()
+    Cell& CurrentCell()
     {
         return _board[_y][_x];
     }
@@ -718,7 +719,7 @@ int main()
 		std::wcout << L"\x1B[2J\x1B[H";
         //system("CLS"); // Windows only
 
-		std::wcout << L"Generation " << board.GetGeneration() << std::endl;
+		std::wcout << L"Generation " << board.Generation() << std::endl;
 		std::wcout << L"Hit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
 		std::wcout << board << std::endl;
 
