@@ -38,6 +38,12 @@ public:
         //std::wcout << "Cell constructor Cell(state)" << std::endl;
     }
 
+    Cell(const Cell& c)
+        : _state(c._state), _age(c._age), _x(c._x), _y(c._y), _n(c._y)
+    {
+        std::wcout << "Cell copy constructor" << std::endl;
+    }
+
     ~Cell()
     {}
 
