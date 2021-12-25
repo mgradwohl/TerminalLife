@@ -1,4 +1,5 @@
 ﻿// TerminalLife.cpp
+#include <windows.h>
 #include <iostream>
 #include <vector>
 #include <functional>
@@ -156,11 +157,14 @@ public:
         {
         case State::Dead: return L" ";
             break;
-        case State::Born: return L"o";
+        case State::Born: return L"\x1b[32mo";
+        //case State::Born: return L"+";
             break;
-        case State::Live: return L"O";
+        case State::Live: return L"\x1b[mO";
+        //case State::Live: return L"O";
             break;
-        case State::Dying: return L".";
+        case State::Dying: return L"\x1b[31mo";
+        //case State::Dying: return L"o";
             break;
         default:
             return L"⁉️";
@@ -241,7 +245,7 @@ public:
     Board(int width, int height)
         : _width(width), _height(height), _generation(0), _x(0), _y(0)
     {
-        std::wcout << "Board constructor Board(w, h)" << std::endl;
+        //std::wcout << "Board constructor Board(w, h)" << std::endl;
         _board.resize(_height);
         for (int y = 0; y < _height; y++)
         {
@@ -257,7 +261,7 @@ public:
     Board(const Board& b)
         : _width(b._width), _height(b._height), _generation(b._generation), _x(b._x), _y(b._y)
     {
-        std::wcout << "Board copy constructor" << std::endl;
+        //std::wcout << "Board copy constructor" << std::endl;
     }
 
     int Generation() const
@@ -427,7 +431,7 @@ public:
                 F(cc);
             }
         }
-        NextGeneration();
+        //NextGeneration();
     }
 
     void ConwayFunction(Cell& cell)
@@ -688,14 +692,42 @@ std::wostream& operator<<(std::wostream& stream, Board& board)
 
 int main()
 {
-	// could ask the user for board size
+    // could ask the user for board size
 	// and at what age, if any, they want to old cells to die
     // TODO make board._board a heap allocated variable (it's the big thing)
-    Board board(75, 50);
+    Board board(80, 40);
+
+    // Set output mode to handle virtual terminal sequences
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut == INVALID_HANDLE_VALUE)
+    {
+        return false;
+    }
+
+    DWORD dwOriginalOutMode = 0;
+    if (!GetConsoleMode(hOut, &dwOriginalOutMode))
+    {
+        return false;
+    }
+
+    DWORD dwRequestedOutModes = ENABLE_VIRTUAL_TERMINAL_PROCESSING /*| DISABLE_NEWLINE_AUTO_RETURN*/;
+
+    DWORD dwOutMode = dwOriginalOutMode | dwRequestedOutModes;
+    if (!SetConsoleMode(hOut, dwOutMode))
+    {
+        // we failed to set both modes, try to step down mode gracefully.
+        dwRequestedOutModes = ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+        dwOutMode = dwOriginalOutMode | dwRequestedOutModes;
+        if (!SetConsoleMode(hOut, dwOutMode))
+        {
+            // Failed to set any VT mode, can't do anything here.
+            return -1;
+        }
+    }
 
     // Randomly fill  spots for n 'generations'
 	int n = board.Width() * board.Height() / 2;
-	std::wcout << L"Randomly populating cells for " << n << " generations" << std::endl;
+	//std::wcout << L"Randomly populating cells for " << n << " generations" << std::endl;
 	board.RandomizeBoard(n);
 
     // using example from https://en.cppreference.com/w/cpp/utility/functional/bind
@@ -718,21 +750,38 @@ int main()
 
     auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
 
+    COORD coordScreen = { 0, 0 };
+    //\x1b[31mo
+    std::wcout << L"\x1b[?25l";
     // simulation loop
     while (true)
 	{
 		// this clears the screen so the board draws over itself
-		std::wcout << L"\x1B[2J\x1B[H";
         //system("CLS"); // Windows only
 
-		std::wcout << L"Generation " << board.Generation() << std::endl;
-		std::wcout << L"Hit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
-		std::wcout << board << std::endl;
+        SetConsoleCursorPosition(hOut, coordScreen);
+
+        std::wcout << L"\x1b[mGeneration " << board.Generation() << std::endl;
+		std::wcout << L"\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
+
+        std::wcout << board << std::endl;
 
 		if (std::cin.get() == 'n')
 			break;
 
         board.UpdateBoard(C);
+
+        // this code lets you see the transitions, comment it out if just want to see the generations
+            SetConsoleCursorPosition(hOut, coordScreen);
+            std::wcout << L"\x1b[mGeneration " << board.Generation() << std::endl;
+            std::wcout << L"\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
+            std::wcout << board << std::endl;
+
+            if (std::cin.get() == 'n')
+                break;
+        // end of transitions code
+
+        board.NextGeneration();
 
         //Old way where the loop is copy pasted everywhere
         //board.Conway();
@@ -742,5 +791,5 @@ int main()
 		//board.LifeWithoutDeath();
 		//board.DayAndNight();
 	}
-	std::wcout << L"Thanks for the simulation" << std::endl;
+	std::wcout << L"\x1b[mThanks for the simulation" << std::endl;
 }
