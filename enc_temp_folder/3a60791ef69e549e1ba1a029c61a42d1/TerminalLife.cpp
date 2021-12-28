@@ -43,7 +43,7 @@ public:
     Cell(const Cell& c)
         : _state(c._state), _age(c._age), _x(c._x), _y(c._y), _neighbors(c._y)
     {
-        //std::wcout << "Cell copy constructor" << std::endl;
+        std::wcout << "Cell copy constructor" << std::endl;
     }
 
     ~Cell()
@@ -250,7 +250,7 @@ public:
     Board(int width, int height)
         : _width(width), _height(height), _size(width* height), _generation(0), _x(0), _y(0)
     {
-        //std::wcout << "Board constructor Board(w, h)" << std::endl;
+        std::wcout << "Board constructor Board(w, h)" << std::endl;
         _board.resize(_size);
         for (int x = 0; x < _width; x++)
         {
