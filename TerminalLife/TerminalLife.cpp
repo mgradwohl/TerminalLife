@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <functional>
+#include <string>
 
 class Cell
 {
@@ -16,31 +17,31 @@ public:
     enum class State { Dead, Born, Live, Dying };
 
 private:
-    int _x, _y, _age, _n;
+    int _x, _y, _age, _neighbors;
     State _state;
 
 public:
     Cell()
-        : _state(State::Dead), _age(0), _x(0), _y(0), _n(0)
+        : _state(State::Dead), _age(0), _x(0), _y(0), _neighbors(0)
     {
         //std::wcout << "Cell constructor Cell()" << std::endl;
     }
 
     Cell(int x, int y)
-        : _state(State::Dead), _age(0), _x(x), _y(y), _n(0)
+        : _state(State::Dead), _age(0), _x(x), _y(y), _neighbors(0)
     {
         //std::wcout << "Cell constructor Cell(x,y)" << std::endl;
     }
 
     Cell(State state)
-        : _state(state), _age(0), _x(0), _y(0), _n(0)
+        : _state(state), _age(0), _x(0), _y(0), _neighbors(0)
     {
         if (_state == Cell::State::Born) _age = 0;
         //std::wcout << "Cell constructor Cell(state)" << std::endl;
     }
 
     Cell(const Cell& c)
-        : _state(c._state), _age(c._age), _x(c._x), _y(c._y), _n(c._y)
+        : _state(c._state), _age(c._age), _x(c._x), _y(c._y), _neighbors(c._y)
     {
         std::wcout << "Cell copy constructor" << std::endl;
     }
@@ -64,14 +65,14 @@ public:
         return _y;
     }
 
-    int N() const
+    int Neighbors() const
     {
-        return _n;
+        return _neighbors;
     }
 
-    void SetN(int n)
+    void SetNeighbors(int n)
     {
-        _n = n;
+        _neighbors = n;
     }
 
     int Age() const
@@ -157,11 +158,11 @@ public:
         {
         case State::Dead: return L" ";
             break;
-        case State::Born: return L"\x1b[32mo";
-        //case State::Born: return L"+";
-            break;
         case State::Live: return L"\x1b[mO";
         //case State::Live: return L"O";
+            break;
+        case State::Born: return L"\x1b[32mo";
+            //case State::Born: return L"+";
             break;
         case State::Dying: return L"\x1b[31mo";
         //case State::Dying: return L"o";
@@ -227,7 +228,7 @@ public:
     }
 };
 
-typedef std::vector<std::vector<Cell> > Vector2D;
+//typedef std::vector<std::vector<Cell> > Vector2D;
 
 // for visualization purposes (0,0) is the top left.
 // as x increases move right
@@ -236,30 +237,30 @@ class Board
 {
 private:
     // if I allocated this on the heap, I could get the size right with resize
-    Vector2D _board;
+    std::vector<Cell> _board;
     int _width, _height;
+    int _size;
     int _generation;
     int _x, _y;
 
 public:
     Board(int width, int height)
-        : _width(width), _height(height), _generation(0), _x(0), _y(0)
+        : _width(width), _height(height), _size(width* height), _generation(0), _x(0), _y(0)
     {
-        //std::wcout << "Board constructor Board(w, h)" << std::endl;
-        _board.resize(_height);
-        for (int y = 0; y < _height; y++)
+        std::wcout << "Board constructor Board(w, h)" << std::endl;
+        _board.resize(_size);
+        for (int x = 0; x < _width; x++)
         {
-            _board[y].resize(width);
-            for (int x = 0; x < _width; x++)
+            for (int y = 0; y < _height; y++)
             {
                 // gotta be a better way?
-                _board[y][x].SetXY(x, y);
+                _board[x + (y * _width)].SetXY(x, y);
             }
         }
     }
 
     Board(const Board& b)
-        : _width(b._width), _height(b._height), _generation(b._generation), _x(b._x), _y(b._y)
+        : _width(b._width), _height(b._height), _size(b._size), _generation(b._generation), _x(b._x), _y(b._y)
     {
         //std::wcout << "Board copy constructor" << std::endl;
     }
@@ -282,39 +283,18 @@ public:
     void SetCell(int x, int y, Cell::State state)
     {
         // no bounds checking
-        _board[y][x] = state;
+        _board[x +(y * _width)] = state;
     }
 
     Cell& GetCell(int x, int y)
     {
         // no bounds checking
-        return _board[y][x];
+        return _board[x + (y * _width)];
     }
 
     Cell& CurrentCell()
     {
-        return _board[_y][_x];
-    }
-
-    // used these for debugging
-    int ClampX(int x) const
-    {
-        if (x < 0)
-            x = 0;
-        if (x >= _width)
-            x = _width - 1;
-
-        return x;
-    }
-
-    int ClampY(int y) const
-    {
-        if (y < 0)
-            y = 0;
-        if (y >= _height)
-            y = _height - 1;
-
-        return y;
+        return _board[_x + (_y * _width)];
     }
 
     int CountLiveNeighbors(Cell& cell)
@@ -341,7 +321,7 @@ public:
         if (GetCell(x + xoleft, y).IsAlive()) count++;
         if (GetCell(x + xoright, y).IsAlive()) count++;
 
-        cell.SetN(count);
+        cell.SetNeighbors(count);
 
         return count;
     }
@@ -370,7 +350,7 @@ public:
         if (GetCell(x + xoleft, y).IsAliveNotDying()) count++;
         if (GetCell(x + xoright, y).IsAliveNotDying()) count++;
 
-        cell.SetN(count);
+        cell.SetNeighbors(count);
         return count;
     }
 
@@ -378,24 +358,33 @@ public:
     void NextGeneration()
     {
         _generation++;
-        for (int y = 0; y < Height(); y++)
+        //for (int y = 0; y < Height(); y++)
+        //{
+        //    for (int x = 0; x < Width(); x++)
+        //    {
+        //        GetCell(x, y).NextGeneration();
+        //    }
+        //}
+
+        for (int i = 0; i < _size; i++)
         {
-            for (int x = 0; x < Width(); x++)
-            {
-                GetCell(x, y).NextGeneration();
-            }
+            _board[i].NextGeneration();
         }
     }
 
     void NextGenerationBrain()
     {
-        _generation++;
-        for (int y = 0; y < Height(); y++)
+        //_generation++;
+        //for (int y = 0; y < Height(); y++)
+        //{
+        //    for (int x = 0; x < Width(); x++)
+        //    {
+        //        GetCell(x, y).NextGenerationBrain();
+        //    }
+        //}
+        for (int i = 0; i < _size; i++)
         {
-            for (int x = 0; x < Width(); x++)
-            {
-                GetCell(x, y).NextGenerationBrain();
-            }
+            _board[i].NextGenerationBrain();
         }
     }
 
@@ -441,12 +430,12 @@ public:
         // All other live cells die in the next generation. Similarly, all other dead cells stay dead.
 
         CountLiveNeighbors(cell);
-        if (cell.IsAlive() && cell.N() >= 2 && cell.N() <= 3)
+        if (cell.IsAlive() && cell.Neighbors() >= 2 && cell.Neighbors() <= 3)
         {
             cell.SetState(Cell::State::Live);
         }
         else
-        if (cell.IsDead() && cell.N() == 3)
+        if (cell.IsDead() && cell.Neighbors() == 3)
         {
             cell.SetState(Cell::State::Born);
         }
@@ -678,24 +667,31 @@ std::ostream& operator<<(std::ostream& stream, Board& board)
 
 std::wostream& operator<<(std::wostream& stream, Board& board)
 {
+    static std::vector<std::wstring> str;
+    str.resize(board.Height());
     for (int y = 0; y < board.Height(); y++)
     {
+        str[y].reserve(board.Width() + 1);
+        str[y].clear();
         for (int x = 0; x < board.Width(); x++)
         {
             Cell& cell = board.GetCell(x, y);
-            std::wcout << cell;
+            str[y] += cell.GetWideStateString();
         }
-        std::wcout << std::endl;
+        str[y] += L"\n";
     }
+
+    for (auto &s : str)
+    {
+        wprintf(s.c_str());
+    }
+
     return stream;
 }
 
 int main()
 {
-    // could ask the user for board size
-	// and at what age, if any, they want to old cells to die
-    // TODO make board._board a heap allocated variable (it's the big thing)
-    Board board(80, 40);
+    std::wcout << L"Getting console" << std::endl;
 
     // Set output mode to handle virtual terminal sequences
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -725,10 +721,31 @@ int main()
         }
     }
 
+    // could ask the user for board size
+    // and at what age, if any, they want to old cells to die
+    // TODO make board._board a heap allocated variable (it's the big thing)
+
+    std::wcout << L"Setting up board" << std::endl;
+
+    CONSOLE_SCREEN_BUFFER_INFO csbi = {};
+    GetConsoleScreenBufferInfo(hOut, &csbi);
+#ifdef _DEBUG
+    Board board(60, 30);
+#else
+    Board board(csbi.dwSize.X, csbi.dwSize.Y - 5);
+#endif
+
     // Randomly fill  spots for n 'generations'
-	int n = board.Width() * board.Height() / 2;
-	//std::wcout << L"Randomly populating cells for " << n << " generations" << std::endl;
+	int n = board.Width() * board.Height() / 4;
+#ifdef _DEBUG
+    std::wcout << L"Randomly populating cells for " << n << " generations" << std::endl;
+#endif
 	board.RandomizeBoard(n);
+#ifdef _DEBUG
+    std::wcout << L"\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
+    if (std::cin.get() == 'n')
+        return 0;
+#endif
 
     // using example from https://en.cppreference.com/w/cpp/utility/functional/bind
     // auto f3 = std::bind(&Foo::print_sum, &foo, 95, _1);
@@ -749,6 +766,7 @@ int main()
     //auto C = std::mem_fn(&Board::ConwayFunction);
 
     auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
+    system("CLS"); // Windows only
 
     COORD coordScreen = { 0, 0 };
     //\x1b[31mo
@@ -756,29 +774,34 @@ int main()
     // simulation loop
     while (true)
 	{
-		// this clears the screen so the board draws over itself
-        //system("CLS"); // Windows only
-
+#ifdef _DEBUG
+        //Sleep(1000);
+#else
+        Sleep(250);
+#endif
         SetConsoleCursorPosition(hOut, coordScreen);
 
         std::wcout << L"\x1b[mGeneration " << board.Generation() << std::endl;
-		std::wcout << L"\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
-
+#ifdef _DEBUG
+        std::wcout << L"\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
+#endif
         std::wcout << board << std::endl;
 
-		if (std::cin.get() == 'n')
+#ifdef _DEBUG
+        if (std::cin.get() == 'n')
 			break;
+#endif
 
         board.UpdateBoard(C);
 
         // this code lets you see the transitions, comment it out if just want to see the generations
-            SetConsoleCursorPosition(hOut, coordScreen);
-            std::wcout << L"\x1b[mGeneration " << board.Generation() << std::endl;
-            std::wcout << L"\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
-            std::wcout << board << std::endl;
+            //SetConsoleCursorPosition(hOut, coordScreen);
+            //std::wcout << L"\x1b[mGeneration " << board.Generation() << std::endl;
+            //std::wcout << L"\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
+            //std::wcout << board << std::endl;
 
-            if (std::cin.get() == 'n')
-                break;
+            //if (std::cin.get() == 'n')
+            //    break;
         // end of transitions code
 
         board.NextGeneration();
