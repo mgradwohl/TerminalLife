@@ -154,21 +154,24 @@ public:
 
     const wchar_t* GetWideStateString() const
     {
+        static const std::wstring strDead(L" ");
+        static const std::wstring strLive(L"\x1b[mO");
+        static const std::wstring strBorn(L"\x1b[32mo");
+        static const std::wstring strDying(L"\x1b[31mo");
+        static const std::wstring strUnkown(L"\x1b[31m?");
+
         switch (_state)
         {
-        case State::Dead: return L" ";
+        case State::Dead: return strDead.c_str();
             break;
-        case State::Live: return L"\x1b[mO";
-        //case State::Live: return L"O";
+        case State::Live: return strLive.c_str();
             break;
-        case State::Born: return L"\x1b[32mo";
-            //case State::Born: return L"+";
+        case State::Born: return strBorn.c_str();
             break;
-        case State::Dying: return L"\x1b[31mo";
-        //case State::Dying: return L"o";
+        case State::Dying: return strDying.c_str();
             break;
         default:
-            return L"⁉️";
+            return strUnkown.c_str();
         }
     }
 
