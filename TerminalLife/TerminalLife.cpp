@@ -667,25 +667,27 @@ std::ostream& operator<<(std::ostream& stream, Board& board)
 
 std::wostream& operator<<(std::wostream& stream, Board& board)
 {
-    static std::vector<std::wstring> str;
-    str.resize(board.Height());
+    //static std::vector<std::wstring> str;
+    std::wstring str;
+    str.reserve((board.Width() + 1) * board.Height());
+    str = L"\0";
     for (int y = 0; y < board.Height(); y++)
     {
-        str[y].reserve(board.Width() + 1);
-        str[y].clear();
+        //str[y].reserve(board.Width() + 1);
+        //str[y].clear();
         for (int x = 0; x < board.Width(); x++)
         {
             Cell& cell = board.GetCell(x, y);
-            str[y] += cell.GetWideStateString();
+            str += cell.GetWideStateString();
         }
-        str[y] += L"\n";
+        str += L"\n";
     }
 
-    for (auto &s : str)
-    {
-        wprintf(s.c_str());
-    }
-
+    //for (auto &s : str)
+    //{
+    //    wprintf(s.c_str());
+    //}
+    wprintf(str.c_str());
     return stream;
 }
 
