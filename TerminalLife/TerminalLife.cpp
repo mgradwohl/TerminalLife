@@ -163,6 +163,35 @@ public:
         }
     }
 
+    const auto GetEmojiStateString() const
+    {
+        //static const std::wstring strDead(L" ");
+        //static const std::wstring strLive(L"\x1b[mO");
+        //static const std::wstring strBorn(L"\x1b[32mo");
+        //static const std::wstring strDying(L"\x1b[31mo");
+        //static const std::wstring strUnkown(L"\x1b[31m?");
+
+        static auto cDead    = u8"🖤\0";
+        static auto cLive    = u8"😁\0";
+        static auto cBorn    = u8"👼\0";
+        static auto cDying   = u8"🤢\0";
+        static auto cUnknown = u8"⁉️\0";
+
+        switch (_state)
+        {
+            case State::Dead: return cDead;
+                break;
+            case State::Live: return cLive;
+                break;
+            case State::Born: return cBorn;
+                break;
+            case State::Dying: return cDying;
+                break;
+            default:
+                return cUnknown;
+        }
+    }
+
     void NextGeneration()
     {
         if (_state == Cell::State::Dead)
@@ -612,32 +641,6 @@ public:
     }
 };
 
-//std::ostream& operator<<(std::ostream& stream, Cell& cell)
-//{
-//    std::cout << cell.GetStateString();
-//    return stream;
-//}
-//
-//std::wostream& operator<<(std::wostream& stream, Cell& cell)
-//{
-//    std::wcout << cell.GetWideStateString();
-//    return stream;
-//}
-//
-//std::ostream& operator<<(std::ostream& stream, Board& board)
-//{
-//    for (int y = 0; y < board.Height(); y++)
-//    {
-//        for (int x = 0; x < board.Width(); x++)
-//        {
-//            Cell& cell = board.GetCell(x, y);
-//            std::cout << cell;
-//        }
-//        std::cout << std::endl;
-//    }
-//    return stream;
-//}
-
 std::wostream& operator<<(std::wostream& stream, Board& board)
 {
     //static std::vector<std::wstring> str;
@@ -658,12 +661,41 @@ std::wostream& operator<<(std::wostream& stream, Board& board)
     return stream;
 }
 
+//std::ostream& operator<<(std::ostream& os, const std::u8string& str)
+//{
+//    os << reinterpret_cast<const char*>(str.data());
+//    return os;
+//}
+
+std::ostream& operator<<(std::ostream& stream, Board& board)
+{
+    //static std::vector<std::wstring> str;
+    std::u8string str;
+    str.reserve((board.Width() + 1) * board.Height());
+    str = u8"\0\0";
+    for (int y = 0; y < board.Height(); y++)
+    {
+        for (int x = 0; x < board.Width(); x++)
+        {
+            Cell& cell = board.GetCell(x, y);
+            str += cell.GetEmojiStateString();
+        }
+        str += u8"\n";
+    }
+    str += u8"\0";
+
+    printf((const char*)str.c_str());
+    return stream;
+}
+
 int main()
 {
     auto UTF8 = std::locale("en_US.UTF-8");
     std::locale::global(UTF8);
     std::wcout.imbue(UTF8);
+    std::cout.imbue(UTF8);
     setlocale(LC_ALL, "en_us.utf8");
+    SetConsoleOutputCP(CP_UTF8);
 
     std::wcout << L"Getting console" << std::endl;
 
@@ -705,7 +737,7 @@ int main()
     std::wcout << L"Setting up board" << std::endl;
     Board board(60, 30);
 #else
-    Board board(csbi.dwSize.X, csbi.dwSize.Y - 5);
+    Board board((csbi.dwSize.X/2)-2, csbi.dwSize.Y - 10);
 #endif
 
     // Randomly fill  spots for n 'generations'
@@ -743,7 +775,7 @@ int main()
 
     COORD coordScreen = { 0, 0 };
     //\x1b[31mo
-    std::wcout << L"\x1b[?25l";
+    std::cout << "\x1b[?25l";
     // simulation loop
     while (true)
 	{
@@ -754,11 +786,11 @@ int main()
 #endif
         SetConsoleCursorPosition(hOut, coordScreen);
 
-        std::wcout << L"\x1b[mGeneration " << board.Generation() << std::endl;
+        std::cout << "\x1b[mGeneration " << board.Generation() << std::endl << std::endl;
 #ifdef _DEBUG
         std::wcout << L"\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
 #endif
-        std::wcout << board << std::endl;
+        std::cout << board << std::endl;
 
 #ifdef _DEBUG
         if (std::cin.get() == 'n')
@@ -769,9 +801,9 @@ int main()
 
         // this code lets you see the transitions, comment it out if just want to see the generations
             //SetConsoleCursorPosition(hOut, coordScreen);
-            //std::wcout << L"\x1b[mGeneration " << board.Generation() << std::endl;
-            //std::wcout << L"\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
-            //std::wcout << board << std::endl;
+            //std::cout << "\x1b[mGeneration " << board.Generation() << std::endl;
+            //std::cout << "\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
+            //std::cout << board << std::endl;
 
             //if (std::cin.get() == 'n')
             //    break;
@@ -787,5 +819,5 @@ int main()
 		//board.LifeWithoutDeath();
 		//board.DayAndNight();
 	}
-	std::wcout << L"\x1b[mThanks for the simulation" << std::endl;
+	std::cout << "\x1b[mThanks for the simulation" << std::endl;
 }
