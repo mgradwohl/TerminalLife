@@ -134,24 +134,6 @@ public:
         }
     }
 
-    // Not sure why this doesn't work. GRAFIX!!! would be cool
-    //const wchar_t* GetWideStateString()
-    //{
-    //    switch (_state)
-    //    {
-    //    case State::Dead: return L"💩";
-    //        break;
-    //    case State::Born: return L"👼";
-    //        break;
-    //    case State::Live: return L"😁";
-    //        break;
-    //    case State::Dying: return L"💔";
-    //        break;
-    //    default:
-    //        return L"⁉️";
-    //    }
-    //}
-
     const wchar_t* GetWideStateString() const
     {
         static const std::wstring strDead(L" ");
@@ -159,6 +141,12 @@ public:
         static const std::wstring strBorn(L"\x1b[32mo");
         static const std::wstring strDying(L"\x1b[31mo");
         static const std::wstring strUnkown(L"\x1b[31m?");
+
+        //static const std::wstring strDead(L"💩");
+        //static const std::wstring strLive(L"😁");
+        //static const std::wstring strBorn(L"👼");
+        //static const std::wstring strDying(L"💔");
+        //static const std::wstring strUnkown(L"⁉️");
 
         switch (_state)
         {
@@ -230,8 +218,6 @@ public:
             _state = Cell::State::Dead;
     }
 };
-
-//typedef std::vector<std::vector<Cell> > Vector2D;
 
 // for visualization purposes (0,0) is the top left.
 // as x increases move right
@@ -361,13 +347,6 @@ public:
     void NextGeneration()
     {
         _generation++;
-        //for (int y = 0; y < Height(); y++)
-        //{
-        //    for (int x = 0; x < Width(); x++)
-        //    {
-        //        GetCell(x, y).NextGeneration();
-        //    }
-        //}
 
         for (int i = 0; i < _size; i++)
         {
@@ -377,14 +356,6 @@ public:
 
     void NextGenerationBrain()
     {
-        //_generation++;
-        //for (int y = 0; y < Height(); y++)
-        //{
-        //    for (int x = 0; x < Width(); x++)
-        //    {
-        //        GetCell(x, y).NextGenerationBrain();
-        //    }
-        //}
         for (int i = 0; i < _size; i++)
         {
             _board[i].NextGenerationBrain();
@@ -423,7 +394,6 @@ public:
                 F(cc);
             }
         }
-        //NextGeneration();
     }
 
     void ConwayFunction(Cell& cell)
@@ -642,31 +612,31 @@ public:
     }
 };
 
-std::ostream& operator<<(std::ostream& stream, Cell& cell)
-{
-    std::cout << cell.GetStateString();
-    return stream;
-}
-
-std::wostream& operator<<(std::wostream& stream, Cell& cell)
-{
-    std::wcout << cell.GetWideStateString();
-    return stream;
-}
-
-std::ostream& operator<<(std::ostream& stream, Board& board)
-{
-    for (int y = 0; y < board.Height(); y++)
-    {
-        for (int x = 0; x < board.Width(); x++)
-        {
-            Cell& cell = board.GetCell(x, y);
-            std::cout << cell;
-        }
-        std::cout << std::endl;
-    }
-    return stream;
-}
+//std::ostream& operator<<(std::ostream& stream, Cell& cell)
+//{
+//    std::cout << cell.GetStateString();
+//    return stream;
+//}
+//
+//std::wostream& operator<<(std::wostream& stream, Cell& cell)
+//{
+//    std::wcout << cell.GetWideStateString();
+//    return stream;
+//}
+//
+//std::ostream& operator<<(std::ostream& stream, Board& board)
+//{
+//    for (int y = 0; y < board.Height(); y++)
+//    {
+//        for (int x = 0; x < board.Width(); x++)
+//        {
+//            Cell& cell = board.GetCell(x, y);
+//            std::cout << cell;
+//        }
+//        std::cout << std::endl;
+//    }
+//    return stream;
+//}
 
 std::wostream& operator<<(std::wostream& stream, Board& board)
 {
@@ -676,8 +646,6 @@ std::wostream& operator<<(std::wostream& stream, Board& board)
     str = L"\0";
     for (int y = 0; y < board.Height(); y++)
     {
-        //str[y].reserve(board.Width() + 1);
-        //str[y].clear();
         for (int x = 0; x < board.Width(); x++)
         {
             Cell& cell = board.GetCell(x, y);
@@ -686,16 +654,17 @@ std::wostream& operator<<(std::wostream& stream, Board& board)
         str += L"\n";
     }
 
-    //for (auto &s : str)
-    //{
-    //    wprintf(s.c_str());
-    //}
     wprintf(str.c_str());
     return stream;
 }
 
 int main()
 {
+    setlocale(LC_ALL, "en_us.utf8");
+    auto UTF8 = std::locale("en_US.UTF-8");
+    std::locale::global(UTF8);
+    std::wcout.imbue(UTF8);
+
     std::wcout << L"Getting console" << std::endl;
 
     // Set output mode to handle virtual terminal sequences
@@ -730,11 +699,10 @@ int main()
     // and at what age, if any, they want to old cells to die
     // TODO make board._board a heap allocated variable (it's the big thing)
 
-    std::wcout << L"Setting up board" << std::endl;
-
     CONSOLE_SCREEN_BUFFER_INFO csbi = {};
     GetConsoleScreenBufferInfo(hOut, &csbi);
 #ifdef _DEBUG
+    std::wcout << L"Setting up board" << std::endl;
     Board board(60, 30);
 #else
     Board board(csbi.dwSize.X, csbi.dwSize.Y - 5);
