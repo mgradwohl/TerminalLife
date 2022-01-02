@@ -660,10 +660,10 @@ std::wostream& operator<<(std::wostream& stream, Board& board)
 
 int main()
 {
-    setlocale(LC_ALL, "en_us.utf8");
     auto UTF8 = std::locale("en_US.UTF-8");
     std::locale::global(UTF8);
     std::wcout.imbue(UTF8);
+    setlocale(LC_ALL, "en_us.utf8");
 
     std::wcout << L"Getting console" << std::endl;
 
