@@ -686,9 +686,10 @@ std::wostream& operator<<(std::wostream& stream, Board& board)
 std::ostream& operator<<(std::ostream& stream, Board& board)
 {
     //static std::vector<std::wstring> str;
-    std::u8string str;
+    static std::u8string str;
+    str.clear();
     str.reserve((board.Width() + 1) * board.Height());
-    str = u8"\0\0";
+    str = u8"\0";
     for (int y = 0; y < board.Height(); y++)
     {
         for (int x = 0; x < board.Width(); x++)
@@ -713,9 +714,9 @@ int main()
     setlocale(LC_ALL, "en_us.utf8");
     SetConsoleOutputCP(CP_UTF8);
 
-#ifdef _DEBUG
-    std::wcout << L"Getting console" << std::endl;
-#endif
+    #ifdef _DEBUG
+        std::wcout << L"Getting console" << std::endl;
+    #endif
 
     // Set output mode to handle virtual terminal sequences
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -751,82 +752,90 @@ int main()
 
     CONSOLE_SCREEN_BUFFER_INFO csbi = {};
     GetConsoleScreenBufferInfo(hOut, &csbi);
-#ifdef _DEBUG
-    std::wcout << L"Setting up board" << std::endl;
-    Board board(60, 30);
-#else
-    Board board(csbi.dwSize.X/2, csbi.dwSize.Y - 5);
-#endif
+
+    #ifdef _DEBUG
+        std::wcout << L"Setting up board" << std::endl;
+        Board board(60, 30);
+    #else
+        Board board(csbi.dwSize.X/2, csbi.dwSize.Y - 5);
+    #endif
 
     // Randomly fill  spots for n 'generations'
 	int n = board.Width() * board.Height() / 4;
-#ifdef _DEBUG
-    std::wcout << L"Randomly populating cells for " << n << " generations" << std::endl;
-#endif
-	board.RandomizeBoard(n);
-#ifdef _DEBUG
-    std::wcout << L"\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
-    if (std::cin.get() == 'n')
-        return 0;
-#endif
+    #ifdef _DEBUG
+        std::wcout << L"Randomly populating cells for " << n << " generations" << std::endl;
+    #endif
+	
+    board.RandomizeBoard(n);
+    
+    #ifdef _DEBUG
+        std::wcout << L"\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
+        if (std::cin.get() == 'n')
+            return 0;
+    #endif
 
-    // using example from https://en.cppreference.com/w/cpp/utility/functional/bind
-    // auto f3 = std::bind(&Foo::print_sum, &foo, 95, _1);
+            // using example from https://en.cppreference.com/w/cpp/utility/functional/bind
+            // auto f3 = std::bind(&Foo::print_sum, &foo, 95, _1);
 
-    //this works
-    //void UpdateBoard(auto F)
-    //void ConwayFunction(Cell & cell)
-    //auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
+            //this works
+            //void UpdateBoard(auto F)
+            //void ConwayFunction(Cell & cell)
+            //auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
 
-    //this works too
-    //std::function<void(Cell& cell)> C = [&](Cell& cell) -> void
-    //{
-    //    board.ConwayFunction(cell);
-    //};
+            //this works too
+            //std::function<void(Cell& cell)> C = [&](Cell& cell) -> void
+            //{
+            //    board.ConwayFunction(cell);
+            //};
 
-    //this should work but doesn't
-    // https://en.cppreference.com/w/cpp/utility/functional/mem_fn
-    //auto C = std::mem_fn(&Board::ConwayFunction);
+            //this should work but doesn't
+            // https://en.cppreference.com/w/cpp/utility/functional/mem_fn
+            //auto C = std::mem_fn(&Board::ConwayFunction);
 
     auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
     system("CLS"); // Windows only
 
     COORD coordScreen = { 0, 0 };
-    //\x1b[31mo
     std::cout << "\x1b[?25l";
-    // simulation loop
-    const int msSleep = 1;
-    while (true)
+
+    #ifdef _DEBUG
+        const int msSleep = 10;
+    #else
+        const int msSleep = 10;
+    #endif
+
+        // simulation loop
+        while (true)
 	{
-#ifdef _DEBUG
-        //Sleep(1000);
-#else
         Sleep(msSleep);
-#endif
         SetConsoleCursorPosition(hOut, coordScreen);
 
         std::cout << "\x1b[mGeneration " << board.Generation() << ". Alive: " << Cell::GetLiveCount() << " Dead: " << Cell::GetDeadCount() << " Born: " << Cell::GetBornCount() << " Dying: " << Cell::GetDyingCount() << "                     " << std::endl;
-#ifdef _DEBUG
-        std::wcout << L"\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
-#endif
+        #ifdef _DEBUG
+            std::wcout << L"\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl;
+        #endif
         std::cout << board << std::endl;
 
-#ifdef _DEBUG
-        if (std::cin.get() == 'n')
-			break;
-#endif
+        #ifdef _DEBUG
+            if (std::cin.get() == 'n')
+			    break;
+        #endif
 
         board.UpdateBoard(C);
 
         // this code lets you see the transitions, comment it out if just want to see the generations
         Sleep(msSleep);
         SetConsoleCursorPosition(hOut, coordScreen);
-            std::cout << "\x1b[mGeneration " << board.Generation() << ". Alive: " << Cell::GetLiveCount() << " Dead: " << Cell::GetDeadCount() << " Born: " << Cell::GetBornCount() << " Dying: " << Cell::GetDyingCount() << "                     " << std::endl;
-            //std::cout << "\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
+        std::cout << "\x1b[mGeneration " << board.Generation() << ". Alive: " << Cell::GetLiveCount() << " Dead: " << Cell::GetDeadCount() << " Born: " << Cell::GetBornCount() << " Dying: " << Cell::GetDyingCount() << "                     " << std::endl;
+        #ifdef _DEBUG
+            std::wcout << L"\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl;
+        #endif
             std::cout << board << std::endl;
 
-            ////if (std::cin.get() == 'n')
-            ////    break;
+        #ifdef _DEBUG
+            if (std::cin.get() == 'n')
+                break;
+        #endif
         // end of transitions code
 
         board.NextGeneration();
