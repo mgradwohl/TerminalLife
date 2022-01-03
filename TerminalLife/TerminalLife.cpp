@@ -4,6 +4,7 @@
 #include <vector>
 #include <functional>
 #include <string>
+#include <conio.h>
 
 class Cell
 {
@@ -670,25 +671,19 @@ std::wostream& operator<<(std::wostream& stream, Board& board)
             Cell& cell = board.GetCell(x, y);
             str += cell.GetWideStateString();
         }
-        str += L"\n";
+        str += L"\r\n";
     }
 
     wprintf(str.c_str());
     return stream;
 }
 
-//std::ostream& operator<<(std::ostream& os, const std::u8string& str)
-//{
-//    os << reinterpret_cast<const char*>(str.data());
-//    return os;
-//}
-
 std::ostream& operator<<(std::ostream& stream, Board& board)
 {
     //static std::vector<std::wstring> str;
     std::u8string str;
     str.reserve((board.Width() + 1) * board.Height());
-    str = u8"\0\0";
+    str = u8"\0";
     for (int y = 0; y < board.Height(); y++)
     {
         for (int x = 0; x < board.Width(); x++)
@@ -696,7 +691,7 @@ std::ostream& operator<<(std::ostream& stream, Board& board)
             Cell& cell = board.GetCell(x, y);
             str += cell.GetEmojiStateString();
         }
-        str += u8"\n";
+        str += u8"\r\n";
     }
     str += u8"\0";
 
@@ -713,9 +708,6 @@ int main()
     setlocale(LC_ALL, "en_us.utf8");
     SetConsoleOutputCP(CP_UTF8);
 
-#ifdef _DEBUG
-    std::wcout << L"Getting console" << std::endl;
-#endif
 
     // Set output mode to handle virtual terminal sequences
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -745,14 +737,16 @@ int main()
         }
     }
 
-    // could ask the user for board size
-    // and at what age, if any, they want to old cells to die
-    // TODO make board._board a heap allocated variable (it's the big thing)
+    HWND hwnd = ::GetConsoleWindow();
+
+    system("CLS"); // Windows only
+    std::cout << "\x1b[?25l";
+    std::cout << "Welcome to TerminalLife" << std::endl;
+    std::cout << "Setting up board" << std::endl;
 
     CONSOLE_SCREEN_BUFFER_INFO csbi = {};
     GetConsoleScreenBufferInfo(hOut, &csbi);
 #ifdef _DEBUG
-    std::wcout << L"Setting up board" << std::endl;
     Board board(60, 30);
 #else
     Board board(csbi.dwSize.X/2, csbi.dwSize.Y - 5);
@@ -760,15 +754,8 @@ int main()
 
     // Randomly fill  spots for n 'generations'
 	int n = board.Width() * board.Height() / 4;
-#ifdef _DEBUG
     std::wcout << L"Randomly populating cells for " << n << " generations" << std::endl;
-#endif
 	board.RandomizeBoard(n);
-#ifdef _DEBUG
-    std::wcout << L"\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
-    if (std::cin.get() == 'n')
-        return 0;
-#endif
 
     // using example from https://en.cppreference.com/w/cpp/utility/functional/bind
     // auto f3 = std::bind(&Foo::print_sum, &foo, 95, _1);
@@ -789,45 +776,107 @@ int main()
     //auto C = std::mem_fn(&Board::ConwayFunction);
 
     auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
+
+    std::cout << "\x1b[mHit ENTER to start, SPACE to pause/unpause, ESC to quit, [=] and [-] to change speed, [S] to show details, [F] to show cell fates, and [I] to toggle incremental vs. continuous simulation" << std::endl;
+    std::cin.get();
+
     system("CLS"); // Windows only
 
     COORD coordScreen = { 0, 0 };
-    //\x1b[31mo
-    std::cout << "\x1b[?25l";
+
     // simulation loop
-    const int msSleep = 1;
+    int msSleep = 10;
+    
+    int key = 0;
+    bool fFate = false;
+    bool fScore = false;
+    bool fIncremental = false;
+
     while (true)
-	{
-#ifdef _DEBUG
-        //Sleep(1000);
-#else
-        Sleep(msSleep);
-#endif
+    {
+        if (GetAsyncKeyState(VK_ESCAPE) & 0x01)
+        {
+            break;
+        }
+
+        if (GetAsyncKeyState(VK_OEM_PLUS) & 0x01)
+            msSleep += 100;
+
+        if (GetAsyncKeyState(VK_OEM_MINUS) & 0x01)
+        {
+            msSleep -= 100;
+            if (msSleep < 10) msSleep = 10;
+        }
+
+        if (GetAsyncKeyState(0x46) & 0x01)
+            fFate = !fFate;
+
+        if (GetAsyncKeyState(0x53) & 0x01)
+            fScore = !fScore;
+
+        if (GetAsyncKeyState(0x49) & 0x01)
+            fIncremental = !fIncremental;
+
         SetConsoleCursorPosition(hOut, coordScreen);
 
-        std::cout << "\x1b[mGeneration " << board.Generation() << ". Alive: " << Cell::GetLiveCount() << " Dead: " << Cell::GetDeadCount() << " Born: " << Cell::GetBornCount() << " Dying: " << Cell::GetDyingCount() << "                     " << std::endl;
-#ifdef _DEBUG
-        std::wcout << L"\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
-#endif
+        if (fScore)
+        {
+            std::cout << "\x1b[mGeneration " << board.Generation() << ". Alive: " << Cell::GetLiveCount() << " Dead: " << Cell::GetDeadCount() << " Born: " << Cell::GetBornCount() << " Dying: " << Cell::GetDyingCount() << "                     " << std::endl;
+        }
+        else std::cout << std::endl;
+
+        if (fIncremental)
+        {
+            std::wcout << L"\x1b[mHit SPACE for next screen, [I] to continuously update" << std::endl << std::endl;
+        }
+        else std::wcout << L"\x1b[m                                                     " << std::endl << std::endl;
+
         std::cout << board << std::endl;
 
-#ifdef _DEBUG
-        if (std::cin.get() == 'n')
-			break;
-#endif
+        if (fIncremental)
+        {
+            bool Paused = true;
+            while (Paused)
+            {
+                if (GetAsyncKeyState(VK_SPACE) & 0x01)
+                {
+                    Paused = false;
+                }  
+            }
+        }
+        else Sleep(msSleep);
 
         board.UpdateBoard(C);
 
-        // this code lets you see the transitions, comment it out if just want to see the generations
-        Sleep(msSleep);
-        SetConsoleCursorPosition(hOut, coordScreen);
-            std::cout << "\x1b[mGeneration " << board.Generation() << ". Alive: " << Cell::GetLiveCount() << " Dead: " << Cell::GetDeadCount() << " Born: " << Cell::GetBornCount() << " Dying: " << Cell::GetDyingCount() << "                     " << std::endl;
-            //std::cout << "\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
-            std::cout << board << std::endl;
+        if (fFate)
+        {
+            SetConsoleCursorPosition(hOut, coordScreen);
+            if (fScore)
+            {
+                std::cout << "\x1b[mGeneration " << board.Generation() << ". Alive: " << Cell::GetLiveCount() << " Dead: " << Cell::GetDeadCount() << " Born: " << Cell::GetBornCount() << " Dying: " << Cell::GetDyingCount() << "                     " << std::endl;
+            }
+            else std::cout << std::endl;
 
-            ////if (std::cin.get() == 'n')
-            ////    break;
-        // end of transitions code
+            if (fIncremental)
+            {
+                 std::wcout << L"\x1b[mHit SPACE for next screen, [I] to continuously update" << std::endl << std::endl;
+            }
+            else std::wcout << L"\x1b[m                                                     " << std::endl << std::endl;
+
+            std::cout << board << std::endl;
+            if (fIncremental)
+            {
+                bool Paused = true;
+                while (Paused)
+                {
+                    if (GetAsyncKeyState(VK_SPACE) & 0x01)
+                    {
+                        Paused = false;
+                    }  
+                }
+            }
+            else Sleep(msSleep);
+        }
 
         board.NextGeneration();
 
@@ -838,6 +887,7 @@ int main()
 		//board.Highlife();
 		//board.LifeWithoutDeath();
 		//board.DayAndNight();
-	}
-	std::cout << "\x1b[mThanks for the simulation" << std::endl;
+    }
+
+    std::cout << "\x1b[mThanks for the simulation" << std::endl;
 }
