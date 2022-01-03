@@ -219,7 +219,7 @@ public:
 
         static auto cDead    = u8"🖤\0";
         static auto cLive    = u8"😁\0";
-        static auto cBorn    = u8"👼\0";
+        static auto cBorn    = u8"💕\0";
         static auto cDying   = u8"🤢\0";
         static auto cUnknown = u8"⁉️\0";
 
@@ -709,6 +709,8 @@ int main()
     setlocale(LC_ALL, "en_us.utf8");
     SetConsoleOutputCP(CP_UTF8);
 
+    // don't sync the C++ streams to the C streams, for performance
+    std::ios::sync_with_stdio(false);
 
     // Set output mode to handle virtual terminal sequences
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -741,6 +743,10 @@ int main()
     // could ask the user for board size
     // and at what age, if any, they want to old cells to die
     // TODO make board._board a heap allocated variable (it's the big thing)
+
+    system("CLS");
+    std::cout << "\x1b[mWelcome to TerminalLife, resize your console to get the biggest simulation, then press [ENTER]" << std::endl;
+    std::cin.get();
 
     CONSOLE_SCREEN_BUFFER_INFO csbi = {};
     GetConsoleScreenBufferInfo(hOut, &csbi);
@@ -780,16 +786,20 @@ int main()
     std::cin.get();
 
     system("CLS"); // Windows only
-
     COORD coordScreen = { 0, 0 };
 
     // simulation loop
-    int msSleep = 10;
-    
+    int msSleep = 0;
     int key = 0;
     bool fFate = false;
     bool fScore = false;
     bool fIncremental = false;
+
+    // turn off the cursor
+    std::cout << "\x1b[?25l" << std::endl;
+
+    //untie cin and cout, since we won't use cin anymore and this improves performance
+    std::cin.tie(nullptr);
 
     while (true)
     {
@@ -804,7 +814,7 @@ int main()
         if (GetAsyncKeyState(VK_OEM_MINUS) & 0x01)
         {
             msSleep -= 100;
-            if (msSleep < 10) msSleep = 10;
+            if (msSleep < 1) msSleep = 0;
         }
 
         if (GetAsyncKeyState(0x46) & 0x01)
@@ -820,16 +830,17 @@ int main()
 
         if (fScore)
         {
-            std::cout << "\x1b[mGeneration " << board.Generation() << ". Alive: " << Cell::GetLiveCount() << " Dead: " << Cell::GetDeadCount() << " Born: " << Cell::GetBornCount() << " Dying: " << Cell::GetDyingCount() << "                     " << std::endl;
+            std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << "                     \n";
         }
-        else std::cout << std::endl;
+        else std::cout << "                                                                                                      \n";
 
         if (fIncremental)
         {
-            std::wcout << L"\x1b[mHit SPACE for next screen, [I] to continuously update" << std::endl << std::endl;
+            std::wcout << L"\x1b[mHit SPACE for next screen, [I] to continuously update\n\n" ;
         }
-        else std::wcout << L"\x1b[m                                                     " << std::endl << std::endl;
+        else std::wcout << L"\x1b[m                                                     \n\n";
 
+        // print the board to the console AND flush the stream
         std::cout << board << std::endl;
 
         if (fIncremental)
@@ -852,17 +863,19 @@ int main()
             SetConsoleCursorPosition(hOut, coordScreen);
             if (fScore)
             {
-                std::cout << "\x1b[mGeneration " << board.Generation() << ". Alive: " << Cell::GetLiveCount() << " Dead: " << Cell::GetDeadCount() << " Born: " << Cell::GetBornCount() << " Dying: " << Cell::GetDyingCount() << "                     " << std::endl;
+                std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << "                     \n";
             }
-            else std::cout << std::endl;
+            else std::cout << "                                                                                                      \n";
 
             if (fIncremental)
             {
-                 std::wcout << L"\x1b[mHit SPACE for next screen, [I] to continuously update" << std::endl << std::endl;
+                 std::wcout << L"\x1b[mHit SPACE for next screen, [I] to continuously update\n\n";
             }
-            else std::wcout << L"\x1b[m                                                     " << std::endl << std::endl;
+            else std::wcout << L"\x1b[m                                                     \n\n";
 
+            // print the board with Fates to the console AND flush the stream
             std::cout << board << std::endl;
+
             if (fIncremental)
             {
                 bool Paused = true;
@@ -889,4 +902,5 @@ int main()
     }
 
     std::cout << "\x1b[mThanks for the simulation" << std::endl;
+    SetConsoleMode(hOut, dwOriginalOutMode);
 }
