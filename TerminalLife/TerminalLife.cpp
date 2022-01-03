@@ -19,6 +19,10 @@ public:
 private:
     int _x, _y, _age, _neighbors;
     State _state;
+    inline static int numDead = 0;
+    inline static int numLive = 0;
+    inline static int numBorn = 0;
+    inline static int numDying = 0;
 
 public:
     Cell()
@@ -27,7 +31,7 @@ public:
         //std::wcout << "Cell constructor Cell()" << std::endl;
     }
 
-    Cell(int x, int y)
+    Cell(int x, int y) 
         : _state(State::Dead), _age(0), _x(x), _y(y), _neighbors(0)
     {
         //std::wcout << "Cell constructor Cell(x,y)" << std::endl;
@@ -48,6 +52,35 @@ public:
 
     ~Cell()
     {}
+
+    static int GetDeadCount()
+    {
+        return numDead;
+    }
+
+    static int GetLiveCount()
+    {
+        return numLive;
+    }
+
+    static int GetBornCount()
+    {
+        return numBorn;
+    }
+
+    static int GetDyingCount()
+    {
+        return numDying;
+    }
+
+    static bool ResetCounts()
+    {
+        numDead = 0;
+        numLive = 0;
+        numBorn = 0;
+        numDying = 0;
+        return true;
+    }
 
     void SetXY(int x, int y)
     {
@@ -83,6 +116,18 @@ public:
     void SetState(State state)
     {
         _state = state;
+
+        switch (state)
+        {
+            case Cell::State::Dead: numDead++;
+                break;
+            case Cell::State::Live: numLive++;
+                break;
+            case Cell::State::Born: numBorn++;
+                break;
+            case Cell::State::Dying: numDying++;
+                break;
+        }
     }
 
     State GetState() const
@@ -202,35 +247,12 @@ public:
 
         if (_state == Cell::State::Born)
         {
-            _state = Cell::State::Live;
+            SetState(Cell::State::Live);
         }
 
         if (_state == Cell::State::Dying)
         {
-            _state = Cell::State::Dead;
-        }
-
-        _age++;
-        // Set a positive int to kill old cells when they reach age==int
-        KillOldCells(-1);
-    }
-
-    void NextGenerationBrain()
-    {
-        if (_state == Cell::State::Dead)
-        {
-            // no birthday for you
-            return;
-        }
-
-        if (_state == Cell::State::Born)
-        {
-            _state = Cell::State::Live;
-        }
-
-        if (_state == Cell::State::Dying)
-        {
-            _state = Cell::State::Dead;
+            SetState(Cell::State::Dead);
         }
 
         _age++;
@@ -244,7 +266,7 @@ public:
             return;
 
         if (_age >= age)
-            _state = Cell::State::Dead;
+            SetState(Cell::State::Dead);
     }
 };
 
@@ -301,7 +323,8 @@ public:
     void SetCell(int x, int y, Cell::State state)
     {
         // no bounds checking
-        _board[x +(y * _width)] = state;
+        Cell& cell = _board[x + (y * _width)];
+        cell.SetState(state);
     }
 
     Cell& GetCell(int x, int y)
@@ -376,18 +399,11 @@ public:
     void NextGeneration()
     {
         _generation++;
+        Cell::ResetCounts();
 
         for (int i = 0; i < _size; i++)
         {
             _board[i].NextGeneration();
-        }
-    }
-
-    void NextGenerationBrain()
-    {
-        for (int i = 0; i < _size; i++)
-        {
-            _board[i].NextGenerationBrain();
         }
     }
 
@@ -637,7 +653,7 @@ public:
                 }
             }
         }
-        NextGenerationBrain();
+        NextGeneration();
     }
 };
 
@@ -697,7 +713,9 @@ int main()
     setlocale(LC_ALL, "en_us.utf8");
     SetConsoleOutputCP(CP_UTF8);
 
+#ifdef _DEBUG
     std::wcout << L"Getting console" << std::endl;
+#endif
 
     // Set output mode to handle virtual terminal sequences
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -737,7 +755,7 @@ int main()
     std::wcout << L"Setting up board" << std::endl;
     Board board(60, 30);
 #else
-    Board board((csbi.dwSize.X/2)-2, csbi.dwSize.Y - 10);
+    Board board(csbi.dwSize.X/2, csbi.dwSize.Y - 5);
 #endif
 
     // Randomly fill  spots for n 'generations'
@@ -777,16 +795,17 @@ int main()
     //\x1b[31mo
     std::cout << "\x1b[?25l";
     // simulation loop
+    const int msSleep = 1;
     while (true)
 	{
 #ifdef _DEBUG
         //Sleep(1000);
 #else
-        Sleep(250);
+        Sleep(msSleep);
 #endif
         SetConsoleCursorPosition(hOut, coordScreen);
 
-        std::cout << "\x1b[mGeneration " << board.Generation() << std::endl << std::endl;
+        std::cout << "\x1b[mGeneration " << board.Generation() << ". Alive: " << Cell::GetLiveCount() << " Dead: " << Cell::GetDeadCount() << " Born: " << Cell::GetBornCount() << " Dying: " << Cell::GetDyingCount() << "                     " << std::endl;
 #ifdef _DEBUG
         std::wcout << L"\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
 #endif
@@ -800,13 +819,14 @@ int main()
         board.UpdateBoard(C);
 
         // this code lets you see the transitions, comment it out if just want to see the generations
-            //SetConsoleCursorPosition(hOut, coordScreen);
-            //std::cout << "\x1b[mGeneration " << board.Generation() << std::endl;
+        Sleep(msSleep);
+        SetConsoleCursorPosition(hOut, coordScreen);
+            std::cout << "\x1b[mGeneration " << board.Generation() << ". Alive: " << Cell::GetLiveCount() << " Dead: " << Cell::GetDeadCount() << " Born: " << Cell::GetBornCount() << " Dying: " << Cell::GetDyingCount() << "                     " << std::endl;
             //std::cout << "\x1b[mHit <enter> for next generation, 'n' to stop" << std::endl << std::endl;
-            //std::cout << board << std::endl;
+            std::cout << board << std::endl;
 
-            //if (std::cin.get() == 'n')
-            //    break;
+            ////if (std::cin.get() == 'n')
+            ////    break;
         // end of transitions code
 
         board.NextGeneration();
