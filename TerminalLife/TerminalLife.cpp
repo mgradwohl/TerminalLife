@@ -238,7 +238,7 @@ public:
         }
     }
 
-    void NextGeneration()
+    void NextGeneration(int age)
     {
         if (_state == Cell::State::Dead)
         {
@@ -258,12 +258,12 @@ public:
 
         _age++;
         // Set a positive int to kill old cells when they reach age==int
-        KillOldCells(-1);
+        KillOldCells(age);
     }
 
     void KillOldCells(int age)
     {
-        if (age == -1)
+        if (age < 0)
             return;
 
         if (_age >= age)
@@ -341,8 +341,10 @@ public:
 
     int CountLiveNeighbors(Cell& cell)
     {
-        int x = cell.X();
-        int y = cell.Y();
+        static int x = 0;
+        static int y = 0;
+        x = cell.X();
+        y = cell.Y();
 
         // calculate offsets that wrap
         int xoleft =  (x == 0) ? _width - 1 : -1;
@@ -370,8 +372,10 @@ public:
 
     int CountLiveNotDyingNeighbors(Cell& cell)
     {
-        int x = cell.X();
-        int y = cell.Y();
+        static int x = 0;
+        static int y = 0;
+        x = cell.X();
+        y = cell.Y();
 
         // calculate offsets that wrap
         int xoleft = (x == 0) ? _width - 1 : -1;
@@ -397,18 +401,18 @@ public:
     }
 
     //  could probably replace with a template that would call any lambda for all cells
-    void NextGeneration()
+    void NextGeneration(int age)
     {
         _generation++;
         Cell::ResetCounts();
 
         for (int i = 0; i < _size; i++)
         {
-            _board[i].NextGeneration();
+            _board[i].NextGeneration(age);
         }
     }
 
-    void RandomizeBoard(int n)
+    void RandomizeBoard(int n, int age)
     {
         std::srand(std::time(nullptr));
         int rx, ry, ra;
@@ -424,7 +428,7 @@ public:
             {
                 cell.SetState(Cell::State::Born);
             }
-            NextGeneration();
+            NextGeneration(age);
         }
     }
 
@@ -437,24 +441,27 @@ public:
             for (int x = 0; x < Width(); x++)
             {
                 Cell& cc = GetCell(x, y);
+                CountLiveNeighbors(cc);
                 F(cc);
             }
         }
     }
 
-    void ConwayFunction(Cell& cell)
+    void ConwayRules(Cell& cell)
     {
         // Any live cell with two or three live neighbours survives.
         // Any dead cell with three live neighbours becomes a live cell.
         // All other live cells die in the next generation. Similarly, all other dead cells stay dead.
 
-        CountLiveNeighbors(cell);
-        if (cell.IsAlive() && cell.Neighbors() >= 2 && cell.Neighbors() <= 3)
+        static int count = 0;
+        count = cell.Neighbors();
+
+        if (cell.IsAlive() && count >= 2 && count <= 3)
         {
             cell.SetState(Cell::State::Live);
         }
         else
-        if (cell.IsDead() && cell.Neighbors() == 3)
+        if (cell.IsDead() && count == 3)
         {
             cell.SetState(Cell::State::Born);
         }
@@ -465,165 +472,99 @@ public:
         }
     }
 
-    void Conway()
-    {
-        // Any live cell with two or three live neighbours survives.
-        // Any dead cell with three live neighbours becomes a live cell.
-        // All other live cells die in the next generation. Similarly, all other dead cells stay dead.
-        // Cells that hit 100 'die' (this is currently commented out for testing)
-
-        int count;
-        for (int y = 0; y < Height(); y++)
-        {
-            for (int x = 0; x < Width(); x++)
-            {
-                Cell& cell = GetCell(x, y);
-                count = CountLiveNeighbors(cell);
-
-                if (cell.IsAlive() && count >= 2 && count <= 3)
-                {
-                    cell.SetState(Cell::State::Live);
-                }
-                else
-                if (cell.IsDead() && count == 3)
-                {
-                    cell.SetState(Cell::State::Born);
-                }
-                else
-                if (cell.IsAlive())
-                {
-                    cell.SetState(Cell::State::Dying);
-                }
-            }
-        }
-        NextGeneration();
-    }
-
-    void DayAndNight()
+    void DayAndNightRules(Cell& cell)
     {
         // https://en.wikipedia.org/wiki/Day_and_Night_(cellular_automaton)
         // rule notation B3678/S34678, meaning that a dead cell becomes live (is born)
         // if it has 3, 6, 7, or 8 live neighbors, and a live cell remains alive (survives)
         // if it has 3, 4, 6, 7, or 8 live neighbors,
 
-        int count;
-        for (int y = 0; y < Height(); y++)
-        {
-            for (int x = 0; x < Width(); x++)
-            {
-                Cell& cell = GetCell(x, y);
-                count = CountLiveNeighbors(cell);
+        static int count = 0;
+        count = cell.Neighbors();
 
-                if (cell.IsAlive() && ((count >= 3) && (count != 5)))
-                {
-                    cell.SetState(Cell::State::Live);
-                }
-                else
-                if (cell.IsDead() && ((count == 3) || (count >= 6)))
-                {
-                    cell.SetState(Cell::State::Born);
-                }
-                else
-                if (cell.IsAlive())
-                {
-                    cell.SetState(Cell::State::Dying);
-                }
-            }
+        if (cell.IsAlive() && ((count >= 3) && (count != 5)))
+        {
+            cell.SetState(Cell::State::Live);
         }
-        NextGeneration();
+        else
+        if (cell.IsDead() && ((count == 3) || (count >= 6)))
+        {
+            cell.SetState(Cell::State::Born);
+        }
+        else
+        if (cell.IsAlive())
+        {
+            cell.SetState(Cell::State::Dying);
+        }
     }
 
-    void LifeWithoutDeath()
+    void LifeWithoutDeathRules(Cell& cell)
     {
         // https://en.wikipedia.org/wiki/Life_without_Death
         // every cell that was alive in the previous pattern remains alive,
         // every dead cell that has exactly 3 live neighbors becomes alive itself
         // and every other dead cell remains dead. B3/S012345678
 
-        int count;
-        for (int y = 0; y < Height(); y++)
-        {
-            for (int x = 0; x < Width(); x++)
-            {
-                Cell& cell = GetCell(x, y);
-                count = CountLiveNeighbors(cell);
+        static int count = 0;
+        count = cell.Neighbors();
 
-                if (cell.IsAlive())
-                {
-                    cell.SetState(Cell::State::Live);
-                }
-                else
-                if (cell.IsDead() && count == 3)
-                {
-                    cell.SetState(Cell::State::Born);
-                }
-            }
+        if (cell.IsAlive())
+        {
+            cell.SetState(Cell::State::Live);
         }
-        NextGeneration();
+        else
+        if (cell.IsDead() && count == 3)
+        {
+            cell.SetState(Cell::State::Born);
+        }
     }
 
-    void Highlife()
+    void HighlifeRules(Cell& cell)
     {
         // https://en.wikipedia.org/wiki/Highlife_(cellular_automaton)
         // the rule B36 / S23; that is, a cell is born if it has 3 or 6 neighbors
         //and survives if it has 2 or 3 neighbors.
 
-        int count;
-        for (int y = 0; y < Height(); y++)
-        {
-            for (int x = 0; x < Width(); x++)
-            {
-                Cell& cell = GetCell(x, y);
-                count = CountLiveNeighbors(cell);
+        static int count = 0;
+        count = cell.Neighbors();
 
-                if (cell.IsAlive() && count >= 2 && count <= 3)
-                {
-                    cell.SetState(Cell::State::Live);
-                }
-                else
-                if (cell.IsDead() && ((count == 3) || (count == 6)))
-                {
-                    cell.SetState(Cell::State::Born);
-                }
-                else
-                if (cell.IsAlive())
-                {
-                    cell.SetState(Cell::State::Dying);
-                }
-            }
+        if (cell.IsAlive() && count >= 2 && count <= 3)
+        {
+            cell.SetState(Cell::State::Live);
         }
-        NextGeneration();
+        else
+        if (cell.IsDead() && ((count == 3) || (count == 6)))
+        {
+            cell.SetState(Cell::State::Born);
+        }
+        else
+        if (cell.IsAlive())
+        {
+            cell.SetState(Cell::State::Dying);
+        }
     }
 
-    void Seeds()
+    void SeedsRules(Cell& cell)
     {
         // https://en.wikipedia.org/wiki/Seeds_(cellular_automaton)
         // In each time step, a cell turns on or is "born" if it was off or "dead"
         // but had exactly two neighbors that were on;
         // all other cells turn off. It is described by the rule B2 / S
 
-        int count;
-        for (int y = 0; y < Height(); y++)
-        {
-            for (int x = 0; x < Width(); x++)
-            {
-                Cell& cell = GetCell(x, y);
-                count = CountLiveNeighbors(cell);
+        static int count = 0;
+        count = cell.Neighbors();
 
-                if (cell.IsDead() && count == 2)
-                {
-                    cell.SetState(Cell::State::Born);
-                }
-                else
-                {
-                    cell.SetState(Cell::State::Dying);
-                }
-            }
+        if (cell.IsDead() && count == 2)
+        {
+            cell.SetState(Cell::State::Born);
         }
-        NextGeneration();
+        else
+        {
+            cell.SetState(Cell::State::Dying);
+        }
     }
 
-    void BriansBrain()
+    void BriansBrainRules(Cell& cell)
     {
         // https://en.wikipedia.org/wiki/Brian%27s_Brain
         // In each time step, a cell turns on if it was off but had exactly two neighbors that were on,
@@ -631,30 +572,23 @@ public:
         // which is not counted as an "on" cell in the neighbor count, and prevents any cell from
         // being born there. Cells that were in the dying state go into the off state.
 
-        int count;
-        for (int y = 0; y < Height(); y++)
+        static int count = 0;
+        count = cell.Neighbors();
+
+        if (cell.IsDead() && count == 2)
         {
-            for (int x = 0; x < Width(); x++)
-            {
-                Cell& cell = GetCell(x, y);
-                count = CountLiveNotDyingNeighbors(cell);
-                if (cell.IsDead() && count == 2)
-                {
-                    cell.SetState(Cell::State::Born);
-                }
-                else
-                if (cell.GetState() == Cell::State::Live)
-                {
-                    cell.SetState(Cell::State::Dying);
-                }
-                else
-                if (cell.GetState() == Cell::State::Dying)
-                {
-                    cell.SetState(Cell::State::Dead);
-                }
-            }
+            cell.SetState(Cell::State::Born);
         }
-        NextGeneration();
+        else
+        if (cell.GetState() == Cell::State::Live)
+        {
+            cell.SetState(Cell::State::Dying);
+        }
+        else
+        if (cell.GetState() == Cell::State::Dying)
+        {
+            cell.SetState(Cell::State::Dead);
+        }
     }
 };
 
@@ -704,7 +638,6 @@ int main()
 {
     auto UTF8 = std::locale("en_US.UTF-8");
     std::locale::global(UTF8);
-    std::wcout.imbue(UTF8);
     std::cout.imbue(UTF8);
     setlocale(LC_ALL, "en_us.utf8");
     SetConsoleOutputCP(CP_UTF8);
@@ -751,36 +684,44 @@ int main()
     CONSOLE_SCREEN_BUFFER_INFO csbi = {};
     GetConsoleScreenBufferInfo(hOut, &csbi);
 #ifdef _DEBUG
-    std::wcout << L"Setting up board" << std::endl;
+    std::cout << "Setting up board" << std::endl;
     Board board(60, 30);
 #else
     Board board(csbi.dwSize.X/2, csbi.dwSize.Y - 5);
 #endif
 
+    // Rulesets
+    // using example from https://en.cppreference.com/w/cpp/utility/functional/bind
+    // auto f3 = std::bind(&Foo::print_sum, &foo, 95, _1);
+
+    //this works
+    //void UpdateBoard(auto F)
+    //void ConwayFunction(Cell & cell)
+    //auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
+
+    //this works too
+    //std::function<void(Cell& cell)> C = [&](Cell& cell) -> void
+    //{
+    //    board.ConwayFunction(cell);
+    //};
+
+    //this should work but doesn't
+    // https://en.cppreference.com/w/cpp/utility/functional/mem_fn
+    //auto C = std::mem_fn(&Board::ConwayFunction);
+
+    auto C = std::bind(&Board::ConwayRules, &board, std::placeholders::_1);
+    auto D = std::bind(&Board::DayAndNightRules, &board, std::placeholders::_1);
+    auto S = std::bind(&Board::SeedsRules, &board, std::placeholders::_1);
+    auto B = std::bind(&Board::BriansBrainRules, &board, std::placeholders::_1);
+    auto H = std::bind(&Board::HighlifeRules, &board, std::placeholders::_1);
+    auto L = std::bind(&Board::LifeWithoutDeathRules, &board, std::placeholders::_1);
+
+    // Age at which cells die
+    int age = -1;
     // Randomly fill  spots for n 'generations'
 	int n = board.Width() * board.Height() / 4;
-    std::wcout << L"Randomly populating cells for " << n << " generations" << std::endl;
-	board.RandomizeBoard(n);
-
-            // using example from https://en.cppreference.com/w/cpp/utility/functional/bind
-            // auto f3 = std::bind(&Foo::print_sum, &foo, 95, _1);
-
-            //this works
-            //void UpdateBoard(auto F)
-            //void ConwayFunction(Cell & cell)
-            //auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
-
-            //this works too
-            //std::function<void(Cell& cell)> C = [&](Cell& cell) -> void
-            //{
-            //    board.ConwayFunction(cell);
-            //};
-
-            //this should work but doesn't
-            // https://en.cppreference.com/w/cpp/utility/functional/mem_fn
-            //auto C = std::mem_fn(&Board::ConwayFunction);
-
-    auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
+    std::cout << "Randomly populating cells for " << n << " generations" << std::endl;
+	board.RandomizeBoard(n, -1);
 
     std::cout << "\x1b[mHit ENTER to start, SPACE to pause/unpause, ESC to quit, [=] and [-] to change speed, [S] to show details, [F] to show cell fates, and [I] to toggle incremental vs. continuous simulation" << std::endl;
     std::cin.get();
@@ -836,9 +777,9 @@ int main()
 
         if (fIncremental)
         {
-            std::wcout << L"\x1b[mHit SPACE for next screen, [I] to continuously update\n\n" ;
+            std::cout << "\x1b[mHit SPACE for next screen, [I] to continuously update\n\n" ;
         }
-        else std::wcout << L"\x1b[m                                                     \n\n";
+        else std::cout << "\x1b[m                                                     \n\n";
 
         // print the board to the console AND flush the stream
         std::cout << board << std::endl;
@@ -856,6 +797,7 @@ int main()
         }
         else Sleep(msSleep);
 
+        // pick your ruleset here
         board.UpdateBoard(C);
 
         if (fFate)
@@ -869,9 +811,9 @@ int main()
 
             if (fIncremental)
             {
-                 std::wcout << L"\x1b[mHit SPACE for next screen, [I] to continuously update\n\n";
+                 std::cout << "\x1b[mHit SPACE for next screen, [I] to continuously update\n\n";
             }
-            else std::wcout << L"\x1b[m                                                     \n\n";
+            else std::cout << "\x1b[m                                                     \n\n";
 
             // print the board with Fates to the console AND flush the stream
             std::cout << board << std::endl;
@@ -890,7 +832,7 @@ int main()
             else Sleep(msSleep);
         }
 
-        board.NextGeneration();
+        board.NextGeneration(age);
 
         //Old way where the loop is copy pasted everywhere
         //board.Conway();
