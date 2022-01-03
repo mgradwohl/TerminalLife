@@ -681,7 +681,8 @@ std::wostream& operator<<(std::wostream& stream, Board& board)
 std::ostream& operator<<(std::ostream& stream, Board& board)
 {
     //static std::vector<std::wstring> str;
-    std::u8string str;
+    static std::u8string str;
+    str.clear();
     str.reserve((board.Width() + 1) * board.Height());
     str = u8"\0";
     for (int y = 0; y < board.Height(); y++)
@@ -737,16 +738,14 @@ int main()
         }
     }
 
-    HWND hwnd = ::GetConsoleWindow();
-
-    system("CLS"); // Windows only
-    std::cout << "\x1b[?25l";
-    std::cout << "Welcome to TerminalLife" << std::endl;
-    std::cout << "Setting up board" << std::endl;
+    // could ask the user for board size
+    // and at what age, if any, they want to old cells to die
+    // TODO make board._board a heap allocated variable (it's the big thing)
 
     CONSOLE_SCREEN_BUFFER_INFO csbi = {};
     GetConsoleScreenBufferInfo(hOut, &csbi);
 #ifdef _DEBUG
+    std::wcout << L"Setting up board" << std::endl;
     Board board(60, 30);
 #else
     Board board(csbi.dwSize.X/2, csbi.dwSize.Y - 5);
@@ -757,23 +756,23 @@ int main()
     std::wcout << L"Randomly populating cells for " << n << " generations" << std::endl;
 	board.RandomizeBoard(n);
 
-    // using example from https://en.cppreference.com/w/cpp/utility/functional/bind
-    // auto f3 = std::bind(&Foo::print_sum, &foo, 95, _1);
+            // using example from https://en.cppreference.com/w/cpp/utility/functional/bind
+            // auto f3 = std::bind(&Foo::print_sum, &foo, 95, _1);
 
-    //this works
-    //void UpdateBoard(auto F)
-    //void ConwayFunction(Cell & cell)
-    //auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
+            //this works
+            //void UpdateBoard(auto F)
+            //void ConwayFunction(Cell & cell)
+            //auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
 
-    //this works too
-    //std::function<void(Cell& cell)> C = [&](Cell& cell) -> void
-    //{
-    //    board.ConwayFunction(cell);
-    //};
+            //this works too
+            //std::function<void(Cell& cell)> C = [&](Cell& cell) -> void
+            //{
+            //    board.ConwayFunction(cell);
+            //};
 
-    //this should work but doesn't
-    // https://en.cppreference.com/w/cpp/utility/functional/mem_fn
-    //auto C = std::mem_fn(&Board::ConwayFunction);
+            //this should work but doesn't
+            // https://en.cppreference.com/w/cpp/utility/functional/mem_fn
+            //auto C = std::mem_fn(&Board::ConwayFunction);
 
     auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
 
