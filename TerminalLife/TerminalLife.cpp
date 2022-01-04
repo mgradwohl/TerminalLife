@@ -15,7 +15,7 @@ public:
     // Born means "will be alive in the next generation"
     // Dying means "will die in the next generation"
     // an advantage is that the board never changes size after instantiation
-    enum class State { Dead, Born, Live, Dying };
+    enum class State { Dead, Born, Live, Old, Dying };
 
 private:
     int _x, _y, _age, _neighbors;
@@ -23,7 +23,9 @@ private:
     inline static int numDead = 0;
     inline static int numLive = 0;
     inline static int numBorn = 0;
+    inline static int numOld = 0;
     inline static int numDying = 0;
+    inline static int OldAge = -1;
 
 public:
     Cell()
@@ -54,6 +56,16 @@ public:
     ~Cell()
     {}
 
+    static void SetOldAge(int age)
+    {
+        OldAge = age;
+    }
+
+    static int GetOldAge()
+    {
+        return OldAge;
+    }
+
     static int GetDeadCount()
     {
         return numDead;
@@ -69,6 +81,11 @@ public:
         return numBorn;
     }
 
+    static int GetOldCount()
+    {
+        return numOld;
+    }
+
     static int GetDyingCount()
     {
         return numDying;
@@ -80,6 +97,7 @@ public:
         numLive = 0;
         numBorn = 0;
         numDying = 0;
+        numOld = 0;
         return true;
     }
 
@@ -118,13 +136,23 @@ public:
     {
         _state = state;
 
-        switch (state)
+        switch (_state)
         {
-            case Cell::State::Dead: numDead++;
+            case Cell::State::Dead:
+            {
+                numDead++;
+                _age = 0;
                 break;
+            }
             case Cell::State::Live: numLive++;
                 break;
-            case Cell::State::Born: numBorn++;
+            case Cell::State::Born:
+            {
+                numBorn++;
+                _age = 0;
+                break;
+            }
+            case Cell::State::Old: numOld++;
                 break;
             case Cell::State::Dying: numDying++;
                 break;
@@ -138,7 +166,7 @@ public:
 
     bool IsAlive() const
     {
-        if (_state == Cell::State::Live || _state == Cell::State::Dying)
+        if (_state == Cell::State::Live || _state == Cell::State::Dying || _state == Cell::State::Old)
         {
             return true;
         }
@@ -173,6 +201,8 @@ public:
             break;
         case State::Live: return "O";
             break;
+        case State::Old: return "x";
+            break;
         case State::Dying: return ".";
             break;
         default:
@@ -186,6 +216,7 @@ public:
         static const std::wstring strLive(L"\x1b[mO");
         static const std::wstring strBorn(L"\x1b[32mo");
         static const std::wstring strDying(L"\x1b[31mo");
+        static const std::wstring strOld(L"\x1b[31mx");
         static const std::wstring strUnkown(L"\x1b[31m?");
 
         //static const std::wstring strDead(L"💩");
@@ -201,6 +232,8 @@ public:
         case State::Live: return strLive.c_str();
             break;
         case State::Born: return strBorn.c_str();
+            break;
+        case State::Old: return strOld.c_str();
             break;
         case State::Dying: return strDying.c_str();
             break;
@@ -220,6 +253,7 @@ public:
         static auto cDead    = u8"🖤\0";
         static auto cLive    = u8"😁\0";
         static auto cBorn    = u8"💕\0";
+        static auto cOld     = u8"🤡\0";
         static auto cDying   = u8"🤢\0";
         static auto cUnknown = u8"⁉️\0";
 
@@ -231,6 +265,8 @@ public:
                 break;
             case State::Born: return cBorn;
                 break;
+            case State::Old: return cOld;
+                break;
             case State::Dying: return cDying;
                 break;
             default:
@@ -238,7 +274,7 @@ public:
         }
     }
 
-    void NextGeneration(int age)
+    void NextGeneration()
     {
         if (_state == Cell::State::Dead)
         {
@@ -257,17 +293,28 @@ public:
         }
 
         _age++;
-        // Set a positive int to kill old cells when they reach age==int
-        KillOldCells(age);
     }
 
-    void KillOldCells(int age)
+    void KillOldCell()
     {
-        if (age < 0)
-            return;
-
-        if (_age >= age)
-            SetState(Cell::State::Dead);
+        // we only enforce this rule if age >0
+        if (Cell::OldAge > 0)
+        {
+            if (_age ==  Cell::OldAge - 2)
+            {
+                // mark it as old, about to die
+                SetState(Cell::State::Old);
+            }
+            else if (_age == Cell::OldAge - 1)
+            {
+                // mark it as old, about to die
+                SetState(Cell::State::Dying);
+            }
+            else if (_age >= Cell::OldAge)
+            {
+                SetState(Cell::State::Dead);
+            }
+        }
     }
 };
 
@@ -401,18 +448,18 @@ public:
     }
 
     //  could probably replace with a template that would call any lambda for all cells
-    void NextGeneration(int age)
+    void NextGeneration()
     {
         _generation++;
         Cell::ResetCounts();
 
         for (int i = 0; i < _size; i++)
         {
-            _board[i].NextGeneration(age);
+            _board[i].NextGeneration();
         }
     }
 
-    void RandomizeBoard(int n, int age)
+    void RandomizeBoard(int n)
     {
         std::srand(std::time(nullptr));
         int rx, ry, ra;
@@ -428,7 +475,7 @@ public:
             {
                 cell.SetState(Cell::State::Born);
             }
-            NextGeneration(age);
+            NextGeneration();
         }
     }
 
@@ -443,6 +490,7 @@ public:
                 Cell& cc = GetCell(x, y);
                 CountLiveNeighbors(cc);
                 F(cc);
+                cc.KillOldCell();
             }
         }
     }
@@ -716,12 +764,12 @@ int main()
     auto H = std::bind(&Board::HighlifeRules, &board, std::placeholders::_1);
     auto L = std::bind(&Board::LifeWithoutDeathRules, &board, std::placeholders::_1);
 
-    // Age at which cells die
+    // Age at which cells die <0 they don't, anything >0 they will IFF the user has turned that on with F1
     int age = -1;
     // Randomly fill  spots for n 'generations'
 	int n = board.Width() * board.Height() / 4;
     std::cout << "Randomly populating cells for " << n << " generations" << std::endl;
-	board.RandomizeBoard(n, -1);
+	board.RandomizeBoard(n);
 
     std::cout << "\x1b[mHit ENTER to start, SPACE to pause/unpause, ESC to quit, [=] and [-] to change speed, [S] to show details, [F] to show cell fates, and [I] to toggle incremental vs. continuous simulation" << std::endl;
     std::cin.get();
@@ -730,11 +778,19 @@ int main()
     COORD coordScreen = { 0, 0 };
 
     // simulation loop
+#ifdef _DEBUG
+    int msSleep = 300;
+    bool fFate = true;
+    bool fScore = true;
+    bool fIncremental = true;
+    bool fOldAge = true;
+#else
     int msSleep = 0;
-    int key = 0;
     bool fFate = false;
     bool fScore = false;
     bool fIncremental = false;
+    bool fOldAge = false;
+#endif
 
     // turn off the cursor
     std::cout << "\x1b[?25l" << std::endl;
@@ -751,6 +807,18 @@ int main()
 
         if (GetAsyncKeyState(VK_OEM_PLUS) & 0x01)
             msSleep += 100;
+
+        if (GetAsyncKeyState(VK_F1) & 0x01)
+            fOldAge = !fOldAge;
+
+        if (fOldAge)
+        {
+            Cell::SetOldAge(80);
+        }
+        else
+        {
+            Cell::SetOldAge(-1);
+        }
 
         if (GetAsyncKeyState(VK_OEM_MINUS) & 0x01)
         {
@@ -771,9 +839,9 @@ int main()
 
         if (fScore)
         {
-            std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << "                     \n";
+            std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ".                                                            \n";
         }
-        else std::cout << "                                                                                                      \n";
+        else std::cout << "                                                                                                                          \n";
 
         if (fIncremental)
         {
@@ -805,9 +873,9 @@ int main()
             SetConsoleCursorPosition(hOut, coordScreen);
             if (fScore)
             {
-                std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << "                     \n";
+                std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge " << Cell::GetOldCount() << "                    \n";
             }
-            else std::cout << "                                                                                                      \n";
+            else std::cout << "                                                                                                                          \n";
 
             if (fIncremental)
             {
@@ -832,7 +900,7 @@ int main()
             else Sleep(msSleep);
         }
 
-        board.NextGeneration(age);
+        board.NextGeneration();
 
         //Old way where the loop is copy pasted everywhere
         //board.Conway();
