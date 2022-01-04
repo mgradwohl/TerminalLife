@@ -771,7 +771,7 @@ int main()
     std::cout << "Randomly populating cells for " << n << " generations" << std::endl;
 	board.RandomizeBoard(n);
 
-    std::cout << "\x1b[mHit ENTER to start, SPACE to pause/unpause, ESC to quit, [=] and [-] to change speed, [S] to show details, [F] to show cell fates, and [I] to toggle incremental vs. continuous simulation" << std::endl;
+    std::cout << "\x1b[mHit ENTER to start, SPACE to pause/unpause, ESC to quit, [+] and [-] to change speed, [S] to show details, [F] to show cell fates, and [I] to toggle incremental vs. continuous simulation" << std::endl;
     std::cin.get();
 
     system("CLS"); // Windows only
