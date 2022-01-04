@@ -31,26 +31,22 @@ public:
     Cell()
         : _state(State::Dead), _age(0), _x(0), _y(0), _neighbors(0)
     {
-        //std::wcout << "Cell constructor Cell()" << std::endl;
     }
 
     Cell(int x, int y) 
         : _state(State::Dead), _age(0), _x(x), _y(y), _neighbors(0)
     {
-        //std::wcout << "Cell constructor Cell(x,y)" << std::endl;
     }
 
     Cell(State state)
         : _state(state), _age(0), _x(0), _y(0), _neighbors(0)
     {
         if (_state == Cell::State::Born) _age = 0;
-        //std::wcout << "Cell constructor Cell(state)" << std::endl;
     }
 
     Cell(const Cell& c)
         : _state(c._state), _age(c._age), _x(c._x), _y(c._y), _neighbors(c._y)
     {
-        //std::wcout << "Cell copy constructor" << std::endl;
     }
 
     ~Cell()
@@ -219,12 +215,6 @@ public:
         static const std::wstring strOld(L"\x1b[31mx");
         static const std::wstring strUnkown(L"\x1b[31m?");
 
-        //static const std::wstring strDead(L"💩");
-        //static const std::wstring strLive(L"😁");
-        //static const std::wstring strBorn(L"👼");
-        //static const std::wstring strDying(L"💔");
-        //static const std::wstring strUnkown(L"⁉️");
-
         switch (_state)
         {
         case State::Dead: return strDead.c_str();
@@ -244,12 +234,6 @@ public:
 
     const auto GetEmojiStateString() const
     {
-        //static const std::wstring strDead(L" ");
-        //static const std::wstring strLive(L"\x1b[mO");
-        //static const std::wstring strBorn(L"\x1b[32mo");
-        //static const std::wstring strDying(L"\x1b[31mo");
-        //static const std::wstring strUnkown(L"\x1b[31m?");
-
         static auto cDead    = u8"🖤\0";
         static auto cLive    = u8"😁\0";
         static auto cBorn    = u8"💕\0";
@@ -297,7 +281,7 @@ public:
 
     void KillOldCell()
     {
-        // we only enforce this rule if age >0
+        // we only enforce this rule if age > 0
         if (Cell::OldAge > 0)
         {
             if (_age ==  Cell::OldAge - 2)
@@ -319,8 +303,7 @@ public:
 };
 
 // for visualization purposes (0,0) is the top left.
-// as x increases move right
-// as y increases move down
+// as x increases move right, as y increases move down
 class Board
 {
 private:
@@ -335,7 +318,6 @@ public:
     Board(int width, int height)
         : _width(width), _height(height), _size(width* height), _generation(0), _x(0), _y(0)
     {
-        //std::wcout << "Board constructor Board(w, h)" << std::endl;
         _board.resize(_size);
         for (int x = 0; x < _width; x++)
         {
@@ -350,7 +332,6 @@ public:
     Board(const Board& b)
         : _width(b._width), _height(b._height), _size(b._size), _generation(b._generation), _x(b._x), _y(b._y)
     {
-        //std::wcout << "Board copy constructor" << std::endl;
     }
 
     int Generation() const
@@ -479,8 +460,8 @@ public:
         }
     }
 
-    // does not work:
-    //void UpdateBoard(std::function<void(Cell& cell)>& F)
+    // This form does not work: void UpdateBoard(std::function<void(Cell& cell)>& F)
+    // but using auto is magic
     void UpdateBoard(auto F)
     {
         for (int y = 0; y < Height(); y++)
@@ -684,6 +665,7 @@ std::ostream& operator<<(std::ostream& stream, Board& board)
 
 int main()
 {
+    // make sure Windows Console and C++ runtime are set for utf8
     auto UTF8 = std::locale("en_US.UTF-8");
     std::locale::global(UTF8);
     std::cout.imbue(UTF8);
@@ -721,18 +703,15 @@ int main()
         }
     }
 
-    // could ask the user for board size
-    // and at what age, if any, they want to old cells to die
-    // TODO make board._board a heap allocated variable (it's the big thing)
-
     system("CLS");
     std::cout << "\x1b[mWelcome to TerminalLife, resize your console to get the biggest simulation, then press [ENTER]" << std::endl;
+    std::cout << "\x1b[mHit ENTER to start, SPACE to pause/unpause, ESC to quit, [+] and [-] to change speed, [S] to show details, [F] to show cell fates, and [I] to toggle incremental vs. continuous simulation" << std::endl;
     std::cin.get();
 
     CONSOLE_SCREEN_BUFFER_INFO csbi = {};
     GetConsoleScreenBufferInfo(hOut, &csbi);
 #ifdef _DEBUG
-    std::cout << "Setting up board" << std::endl;
+    // small boards are easier for debugging
     Board board(60, 30);
 #else
     Board board(csbi.dwSize.X/2, csbi.dwSize.Y - 5);
@@ -764,15 +743,10 @@ int main()
     auto H = std::bind(&Board::HighlifeRules, &board, std::placeholders::_1);
     auto L = std::bind(&Board::LifeWithoutDeathRules, &board, std::placeholders::_1);
 
-    // Age at which cells die <0 they don't, anything >0 they will IFF the user has turned that on with F1
-    int age = -1;
     // Randomly fill  spots for n 'generations'
 	int n = board.Width() * board.Height() / 4;
     std::cout << "Randomly populating cells for " << n << " generations" << std::endl;
 	board.RandomizeBoard(n);
-
-    std::cout << "\x1b[mHit ENTER to start, SPACE to pause/unpause, ESC to quit, [+] and [-] to change speed, [S] to show details, [F] to show cell fates, and [I] to toggle incremental vs. continuous simulation" << std::endl;
-    std::cin.get();
 
     system("CLS"); // Windows only
     COORD coordScreen = { 0, 0 };
@@ -845,7 +819,7 @@ int main()
 
         if (fScore)
         {
-            std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Old Age: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ".                                                            \n";
+            std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Old Age: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
         }
         else std::cout << "\x1b[2K\n";
 
@@ -871,15 +845,17 @@ int main()
         }
         else Sleep(msSleep);
 
-        // pick your ruleset here
+        // PICK YOUR RULESET HERE
+        // this calls a Function with rules that determine the state of the cells in the next generation, without changing the cells
         board.UpdateBoard(H);
 
+        // this will show the user the pending changes to the board (born, dying, etc.)
         if (fFate)
         {
             SetConsoleCursorPosition(hOut, coordScreen);
             if (fScore)
             {
-                std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Old Age: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << "                    \n";
+                std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Old Age: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
             }
             else std::cout << "\x1b[2K\n";
 
@@ -906,15 +882,8 @@ int main()
             else Sleep(msSleep);
         }
 
+        // this applies the changes that were determined by the ruleset called by Board::UpdateBoard();
         board.NextGeneration();
-
-        //Old way where the loop is copy pasted everywhere
-        //board.Conway();
-		//board.Seeds();
-		//board.BriansBrain();
-		//board.Highlife();
-		//board.LifeWithoutDeath();
-		//board.DayAndNight();
     }
 
     std::cout << "\x1b[mThanks for the simulation" << std::endl;
