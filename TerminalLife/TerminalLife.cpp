@@ -689,6 +689,7 @@ int main()
     std::cout.imbue(UTF8);
     setlocale(LC_ALL, "en_us.utf8");
     SetConsoleOutputCP(CP_UTF8);
+    HWND hWnd = GetConsoleWindow();
 
     // don't sync the C++ streams to the C streams, for performance
     std::ios::sync_with_stdio(false);
@@ -800,46 +801,49 @@ int main()
 
     while (true)
     {
-        if (GetAsyncKeyState(VK_ESCAPE) & 0x01)
-        {
-            break;
-        }
+        //if (hWnd == GetForegroundWindow())
+        //{
+            if (GetAsyncKeyState(VK_ESCAPE) & 0x01)
+            {
+                break;
+            }
 
-        if (GetAsyncKeyState(VK_OEM_PLUS) & 0x01)
-            msSleep += 100;
+            if (GetAsyncKeyState(VK_OEM_PLUS) & 0x01)
+                msSleep += 100;
 
-        if (GetAsyncKeyState(VK_F1) & 0x01)
-            fOldAge = !fOldAge;
+            if (GetAsyncKeyState(VK_F1) & 0x01)
+                fOldAge = !fOldAge;
 
-        if (fOldAge)
-        {
-            Cell::SetOldAge(80);
-        }
-        else
-        {
-            Cell::SetOldAge(-1);
-        }
+            if (fOldAge)
+            {
+                Cell::SetOldAge(80);
+            }
+            else
+            {
+                Cell::SetOldAge(-1);
+            }
 
-        if (GetAsyncKeyState(VK_OEM_MINUS) & 0x01)
-        {
-            msSleep -= 100;
-            if (msSleep < 1) msSleep = 0;
-        }
+            if (GetAsyncKeyState(VK_OEM_MINUS) & 0x01)
+            {
+                msSleep -= 100;
+                if (msSleep < 1) msSleep = 0;
+            }
 
-        if (GetAsyncKeyState(0x46) & 0x01)
-            fFate = !fFate;
+            if (GetAsyncKeyState(0x46) & 0x01)
+                fFate = !fFate;
 
-        if (GetAsyncKeyState(0x53) & 0x01)
-            fScore = !fScore;
+            if (GetAsyncKeyState(0x53) & 0x01)
+                fScore = !fScore;
 
-        if (GetAsyncKeyState(0x49) & 0x01)
-            fIncremental = !fIncremental;
+            if (GetAsyncKeyState(0x49) & 0x01)
+                fIncremental = !fIncremental;
+        //}
 
         SetConsoleCursorPosition(hOut, coordScreen);
 
         if (fScore)
         {
-            std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ".                                                            \n";
+            std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Old Age: " << fOldAge << ".Alive: " << Cell::GetLiveCount() << ".Dead : " << Cell::GetDeadCount() << ".                                                            \n";
         }
         else std::cout << "                                                                                                                          \n";
 
@@ -866,14 +870,14 @@ int main()
         else Sleep(msSleep);
 
         // pick your ruleset here
-        board.UpdateBoard(C);
+        board.UpdateBoard(H);
 
         if (fFate)
         {
             SetConsoleCursorPosition(hOut, coordScreen);
             if (fScore)
             {
-                std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge " << Cell::GetOldCount() << "                    \n";
+                std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Old Age: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge " << Cell::GetOldCount() << "                    \n";
             }
             else std::cout << "                                                                                                                          \n";
 
