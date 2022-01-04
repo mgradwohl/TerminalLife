@@ -43,9 +43,20 @@ public:
         if (_state == Cell::State::Born) _age = 0;
     }
 
+    // the compiler will not let me delete the copy constructor, AND when I implement them
+    // they don't seem to be called
     Cell(const Cell& c)
         : _state(c._state), _age(c._age), _x(c._x), _y(c._y), _neighbors(c._y)
     {
+        std::cout << "Cell const copy constructor" << std::endl;
+        std::cin.get();
+    }
+
+    Cell(Cell& c)
+        : _state(c._state), _age(c._age), _x(c._x), _y(c._y), _neighbors(c._y)
+    {
+        std::cout << "Cell copy constructor" << std::endl;
+        std::cin.get();
     }
 
     ~Cell() = default;
