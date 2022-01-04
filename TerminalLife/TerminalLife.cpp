@@ -206,34 +206,15 @@ public:
         }
     }
 
-    const wchar_t* GetWideStateString() const
-    {
-        static const std::wstring strDead(L" ");
-        static const std::wstring strLive(L"\x1b[mO");
-        static const std::wstring strBorn(L"\x1b[32mo");
-        static const std::wstring strDying(L"\x1b[31mo");
-        static const std::wstring strOld(L"\x1b[31mx");
-        static const std::wstring strUnkown(L"\x1b[31m?");
-
-        switch (_state)
-        {
-        case State::Dead: return strDead.c_str();
-            break;
-        case State::Live: return strLive.c_str();
-            break;
-        case State::Born: return strBorn.c_str();
-            break;
-        case State::Old: return strOld.c_str();
-            break;
-        case State::Dying: return strDying.c_str();
-            break;
-        default:
-            return strUnkown.c_str();
-        }
-    }
-
     const auto GetEmojiStateString() const
     {
+        //static const std::wstring strDead(L" ");
+        //static const std::wstring strLive(L"\x1b[mO");
+        //static const std::wstring strBorn(L"\x1b[32mo");
+        //static const std::wstring strDying(L"\x1b[31mo");
+        //static const std::wstring strOld(L"\x1b[31mx");
+        //static const std::wstring strUnkown(L"\x1b[31m?");
+
         static auto cDead    = u8"🖤\0";
         static auto cLive    = u8"😁\0";
         static auto cBorn    = u8"💕\0";
@@ -621,26 +602,6 @@ public:
     }
 };
 
-std::wostream& operator<<(std::wostream& stream, Board& board)
-{
-    //static std::vector<std::wstring> str;
-    std::wstring str;
-    str.reserve((board.Width() + 1) * board.Height());
-    str = L"\0";
-    for (int y = 0; y < board.Height(); y++)
-    {
-        for (int x = 0; x < board.Width(); x++)
-        {
-            Cell& cell = board.GetCell(x, y);
-            str += cell.GetWideStateString();
-        }
-        str += L"\r\n";
-    }
-
-    wprintf(str.c_str());
-    return stream;
-}
-
 std::ostream& operator<<(std::ostream& stream, Board& board)
 {
     //static std::vector<std::wstring> str;
@@ -751,6 +712,12 @@ int main()
     system("CLS"); // Windows only
     COORD coordScreen = { 0, 0 };
 
+    // turn off the cursor
+    std::cout << "\x1b[?25l" << std::endl;
+
+    //untie cin and cout, since we won't use cin anymore and this improves performance
+    std::cin.tie(nullptr);
+
     // simulation loop
 #ifdef _DEBUG
     int msSleep = 300;
@@ -766,15 +733,9 @@ int main()
     bool fOldAge = false;
 #endif
 
-    // turn off the cursor
-    std::cout << "\x1b[?25l" << std::endl;
-
-    //untie cin and cout, since we won't use cin anymore and this improves performance
-    std::cin.tie(nullptr);
-
+    // used for an attempt to ensure that keystrokes in other apps don't impact this one
     //HWND hWndC = GetActiveWindow();
     //HWND hWndF = GetForegroundWindow();
-
     while (true)
     {
         //if (GetConsoleWindow() == GetFocus())
