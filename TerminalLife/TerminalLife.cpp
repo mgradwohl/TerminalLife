@@ -689,7 +689,6 @@ int main()
     std::cout.imbue(UTF8);
     setlocale(LC_ALL, "en_us.utf8");
     SetConsoleOutputCP(CP_UTF8);
-    HWND hWnd = GetConsoleWindow();
 
     // don't sync the C++ streams to the C streams, for performance
     std::ios::sync_with_stdio(false);
@@ -799,9 +798,12 @@ int main()
     //untie cin and cout, since we won't use cin anymore and this improves performance
     std::cin.tie(nullptr);
 
+    //HWND hWndC = GetActiveWindow();
+    //HWND hWndF = GetForegroundWindow();
+
     while (true)
     {
-        //if (hWnd == GetForegroundWindow())
+        //if (GetConsoleWindow() == GetFocus())
         //{
             if (GetAsyncKeyState(VK_ESCAPE) & 0x01)
             {
@@ -813,15 +815,6 @@ int main()
 
             if (GetAsyncKeyState(VK_F1) & 0x01)
                 fOldAge = !fOldAge;
-
-            if (fOldAge)
-            {
-                Cell::SetOldAge(80);
-            }
-            else
-            {
-                Cell::SetOldAge(-1);
-            }
 
             if (GetAsyncKeyState(VK_OEM_MINUS) & 0x01)
             {
@@ -839,19 +832,28 @@ int main()
                 fIncremental = !fIncremental;
         //}
 
+        if (fOldAge)
+        {
+            Cell::SetOldAge(80);
+        }
+        else
+        {
+            Cell::SetOldAge(-1);
+        }
+
         SetConsoleCursorPosition(hOut, coordScreen);
 
         if (fScore)
         {
-            std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Old Age: " << fOldAge << ".Alive: " << Cell::GetLiveCount() << ".Dead : " << Cell::GetDeadCount() << ".                                                            \n";
+            std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Old Age: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ".                                                            \n";
         }
-        else std::cout << "                                                                                                                          \n";
+        else std::cout << "\x1b[2K\n";
 
         if (fIncremental)
         {
             std::cout << "\x1b[mHit SPACE for next screen, [I] to continuously update\n\n" ;
         }
-        else std::cout << "\x1b[m                                                     \n\n";
+        else std::cout << "\x1b[2K\n";
 
         // print the board to the console AND flush the stream
         std::cout << board << std::endl;
@@ -877,15 +879,15 @@ int main()
             SetConsoleCursorPosition(hOut, coordScreen);
             if (fScore)
             {
-                std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Old Age: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge " << Cell::GetOldCount() << "                    \n";
+                std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Old Age: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << "                    \n";
             }
-            else std::cout << "                                                                                                                          \n";
+            else std::cout << "\x1b[2K\n";
 
             if (fIncremental)
             {
                  std::cout << "\x1b[mHit SPACE for next screen, [I] to continuously update\n\n";
             }
-            else std::cout << "\x1b[m                                                     \n\n";
+            else std::cout << "\x1b[2K\n";
 
             // print the board with Fates to the console AND flush the stream
             std::cout << board << std::endl;
