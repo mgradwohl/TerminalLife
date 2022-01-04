@@ -1,10 +1,12 @@
 ﻿// TerminalLife.cpp
 #include <windows.h>
-#include <iostream>
-#include <vector>
-#include <functional>
 #include <string>
+#include <iostream>
 #include <conio.h>
+#include <functional>
+#include <algorithm>
+#include <random>
+#include <vector>
 
 class Cell
 {
@@ -18,8 +20,8 @@ public:
     enum class State { Dead, Born, Live, Old, Dying };
 
 private:
-    int _x, _y, _age, _neighbors;
     State _state;
+    int _age, _x, _y, _neighbors;
     inline static int numDead = 0;
     inline static int numLive = 0;
     inline static int numBorn = 0;
@@ -28,18 +30,15 @@ private:
     inline static int OldAge = -1;
 
 public:
-    Cell()
-        : _state(State::Dead), _age(0), _x(0), _y(0), _neighbors(0)
+    Cell() : _state(State::Dead), _age(0), _x(0), _y(0), _neighbors(0)
     {
     }
 
-    Cell(int x, int y) 
-        : _state(State::Dead), _age(0), _x(x), _y(y), _neighbors(0)
+    Cell(int x, int y) : _state(State::Dead), _age(0), _x(x), _y(y), _neighbors(0)
     {
     }
 
-    Cell(State state)
-        : _state(state), _age(0), _x(0), _y(0), _neighbors(0)
+    Cell(State state) : _state(state), _age(0), _x(0), _y(0), _neighbors(0)
     {
         if (_state == Cell::State::Born) _age = 0;
     }
@@ -49,8 +48,9 @@ public:
     {
     }
 
-    ~Cell()
-    {}
+    ~Cell() = default;
+    Cell const& operator=(Cell& cell) = delete;
+    //Cell(Cell& cell) = delete;
 
     static void SetOldAge(int age)
     {
@@ -123,6 +123,11 @@ public:
         _neighbors = n;
     }
 
+    void SetAge(int age)
+    {
+        _age = age;
+    }
+
     int Age() const
     {
         return _age;
@@ -151,6 +156,9 @@ public:
             case Cell::State::Old: numOld++;
                 break;
             case Cell::State::Dying: numDying++;
+                break;
+            default: 
+                // do nothing
                 break;
         }
     }
@@ -206,7 +214,7 @@ public:
         }
     }
 
-    const auto GetEmojiStateString() const
+    auto GetEmojiStateString() const
     {
         //static const std::wstring strDead(L" ");
         //static const std::wstring strLive(L"\x1b[mO");
@@ -310,10 +318,14 @@ public:
         }
     }
 
-    Board(const Board& b)
-        : _width(b._width), _height(b._height), _size(b._size), _generation(b._generation), _x(b._x), _y(b._y)
-    {
-    }
+    //Board(const Board& b)
+    //    : _width(b._width), _height(b._height), _size(b._size), _generation(b._generation), _x(b._x), _y(b._y)
+    //{
+    //}
+
+    Board(Board& b) = delete;
+    ~Board() = default;
+    Board const& operator=(Board& b) = delete;
 
     int Generation() const
     {
@@ -333,8 +345,14 @@ public:
     void SetCell(int x, int y, Cell::State state)
     {
         // no bounds checking
-        Cell& cell = _board[x + (y * _width)];
+        Cell& cell = GetCell(x,y);
         cell.SetState(state);
+    }
+
+    const Cell& GetCell(int x, int y) const
+    {
+        // no bounds checking
+        return _board[x + (y * _width)];
     }
 
     Cell& GetCell(int x, int y)
@@ -423,19 +441,25 @@ public:
 
     void RandomizeBoard(int n)
     {
-        std::srand(std::time(nullptr));
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> xdis(0, _width-1);
+        std::uniform_int_distribution<> ydis(0, _height-1);
+        std::uniform_int_distribution<> adis(0, 100);
+
         int rx, ry, ra;
 
         for (int z = 0; z < n; z++)
         {
-            rx = std::rand() / ((RAND_MAX + 1u) / (Width() - 1));
-            ry = std::rand() / ((RAND_MAX + 1u) / (Height() - 1));
-            ra = std::rand() / ((RAND_MAX + 1u) / 99);
+            rx = xdis(gen);
+            ry = ydis(gen);
+            ra = adis(gen);
 
             Cell& cell = GetCell(rx, ry);
             if (cell.GetState() == Cell::State::Dead)
             {
                 cell.SetState(Cell::State::Born);
+                cell.SetAge(ra);
             }
             NextGeneration();
         }
@@ -457,7 +481,7 @@ public:
         }
     }
 
-    void ConwayRules(Cell& cell)
+    void ConwayRules(Cell& cell) const
     {
         // Any live cell with two or three live neighbours survives.
         // Any dead cell with three live neighbours becomes a live cell.
@@ -482,7 +506,7 @@ public:
         }
     }
 
-    void DayAndNightRules(Cell& cell)
+    void DayAndNightRules(Cell& cell) const
     {
         // https://en.wikipedia.org/wiki/Day_and_Night_(cellular_automaton)
         // rule notation B3678/S34678, meaning that a dead cell becomes live (is born)
@@ -496,19 +520,17 @@ public:
         {
             cell.SetState(Cell::State::Live);
         }
-        else
-        if (cell.IsDead() && ((count == 3) || (count >= 6)))
+        else if (cell.IsDead() && ( count == 3 || count >= 6 ))
         {
             cell.SetState(Cell::State::Born);
         }
-        else
-        if (cell.IsAlive())
+        else if (cell.IsAlive())
         {
             cell.SetState(Cell::State::Dying);
         }
     }
 
-    void LifeWithoutDeathRules(Cell& cell)
+    void LifeWithoutDeathRules(Cell& cell) const
     {
         // https://en.wikipedia.org/wiki/Life_without_Death
         // every cell that was alive in the previous pattern remains alive,
@@ -529,7 +551,7 @@ public:
         }
     }
 
-    void HighlifeRules(Cell& cell)
+    void HighlifeRules(Cell& cell) const
     {
         // https://en.wikipedia.org/wiki/Highlife_(cellular_automaton)
         // the rule B36 / S23; that is, a cell is born if it has 3 or 6 neighbors
@@ -554,11 +576,11 @@ public:
         }
     }
 
-    void SeedsRules(Cell& cell)
+    void SeedsRules(Cell& cell) const
     {
         // https://en.wikipedia.org/wiki/Seeds_(cellular_automaton)
         // In each time step, a cell turns on or is "born" if it was off or "dead"
-        // but had exactly two neighbors that were on;
+        // but had exactly two neighbors that were on
         // all other cells turn off. It is described by the rule B2 / S
 
         static int count = 0;
@@ -574,7 +596,7 @@ public:
         }
     }
 
-    void BriansBrainRules(Cell& cell)
+    void BriansBrainRules(Cell& cell) const
     {
         // https://en.wikipedia.org/wiki/Brian%27s_Brain
         // In each time step, a cell turns on if it was off but had exactly two neighbors that were on,
@@ -604,7 +626,6 @@ public:
 
 std::ostream& operator<<(std::ostream& stream, Board& board)
 {
-    //static std::vector<std::wstring> str;
     static std::u8string str;
     str.clear();
     str.reserve((board.Width() + 1) * board.Height());
@@ -613,7 +634,7 @@ std::ostream& operator<<(std::ostream& stream, Board& board)
     {
         for (int x = 0; x < board.Width(); x++)
         {
-            Cell& cell = board.GetCell(x, y);
+            const Cell& cell = board.GetCell(x, y);
             str += cell.GetEmojiStateString();
         }
         str += u8"\r\n";
@@ -697,7 +718,12 @@ int main()
     // https://en.cppreference.com/w/cpp/utility/functional/mem_fn
     //auto C = std::mem_fn(&Board::ConwayFunction);
 
-    auto C = std::bind(&Board::ConwayRules, &board, std::placeholders::_1);
+    std::function<void(Cell& cell)> C = [&](Cell& cell)-> void
+    {
+        board.ConwayRules(cell);
+    };
+
+    //auto C = std::bind(&Board::ConwayRules, &board, std::placeholders::_1);
     auto D = std::bind(&Board::DayAndNightRules, &board, std::placeholders::_1);
     auto S = std::bind(&Board::SeedsRules, &board, std::placeholders::_1);
     auto B = std::bind(&Board::BriansBrainRules, &board, std::placeholders::_1);
@@ -780,7 +806,7 @@ int main()
 
         if (fScore)
         {
-            std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Old Age: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
+            std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Life Span: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
         }
         else std::cout << "\x1b[2K\n";
 
@@ -816,7 +842,7 @@ int main()
             SetConsoleCursorPosition(hOut, coordScreen);
             if (fScore)
             {
-                std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Old Age: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
+                std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Life Span: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
             }
             else std::cout << "\x1b[2K\n";
 
