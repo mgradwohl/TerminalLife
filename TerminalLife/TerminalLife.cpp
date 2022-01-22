@@ -1,4 +1,6 @@
 ﻿// TerminalLife.cpp
+#include "pch.h"
+
 #include <windows.h>
 #include <string>
 #include <iostream>
