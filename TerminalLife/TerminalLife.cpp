@@ -5,10 +5,11 @@ class Cell
 {
 public:
     // in many implementations a new copy of the board is made
-    // and the new board is by looking at the old board.
-    // I do this with four states: Dead, Born, Live, Dying.
+    // and the new board is made by looking at the old board.
+    // I do this with five states: Dead, Born, Live, Old, Dying
     // Born means "will be alive in the next generation"
     // Dying means "will die in the next generation"
+    // Old means "about to die" if lifespans of cells are enabled
     // an advantage is that the board never changes size after instantiation
     enum class State { Dead, Born, Live, Old, Dying };
 
