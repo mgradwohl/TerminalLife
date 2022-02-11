@@ -630,10 +630,9 @@ public:
 
 std::ostream& operator<<(std::ostream& stream, Board& board)
 {
-    static std::u8string str;
+    static std::u8string str( ((board.Width() + 2) * board.Height()) + 1, ' ');
     str.clear();
-    str.reserve((board.Width() + 1) * board.Height());
-    str = u8"\0";
+    
     for (int y = 0; y < board.Height(); y++)
     {
         for (int x = 0; x < board.Width(); x++)
