@@ -32,7 +32,7 @@ public:
     {
     }
 
-    Cell(State state) : _state(state), _age(0), _x(0), _y(0), _neighbors(0)
+    Cell(State state) : _state(state), _x(0), _y(0), _neighbors(0)
     {
         if (_state == Cell::State::Born) _age = 0;
     }
