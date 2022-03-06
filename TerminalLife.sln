@@ -7,22 +7,32 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalLife", "TerminalLif
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM64 = Debug|ARM64
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		PerfTest|ARM64 = PerfTest|ARM64
 		PerfTest|x64 = PerfTest|x64
 		PerfTest|x86 = PerfTest|x86
+		Release|ARM64 = Release|ARM64
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AA43BF49-753F-4836-9B47-F9B2857D3D09}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{AA43BF49-753F-4836-9B47-F9B2857D3D09}.Debug|ARM64.Build.0 = Debug|ARM64
+		{AA43BF49-753F-4836-9B47-F9B2857D3D09}.Debug|ARM64.Deploy.0 = Debug|ARM64
 		{AA43BF49-753F-4836-9B47-F9B2857D3D09}.Debug|x64.ActiveCfg = Debug|x64
 		{AA43BF49-753F-4836-9B47-F9B2857D3D09}.Debug|x64.Build.0 = Debug|x64
 		{AA43BF49-753F-4836-9B47-F9B2857D3D09}.Debug|x86.ActiveCfg = Debug|Win32
 		{AA43BF49-753F-4836-9B47-F9B2857D3D09}.Debug|x86.Build.0 = Debug|Win32
+		{AA43BF49-753F-4836-9B47-F9B2857D3D09}.PerfTest|ARM64.ActiveCfg = PerfTest|ARM64
+		{AA43BF49-753F-4836-9B47-F9B2857D3D09}.PerfTest|ARM64.Build.0 = PerfTest|ARM64
 		{AA43BF49-753F-4836-9B47-F9B2857D3D09}.PerfTest|x64.ActiveCfg = PerfTest|x64
 		{AA43BF49-753F-4836-9B47-F9B2857D3D09}.PerfTest|x64.Build.0 = PerfTest|x64
 		{AA43BF49-753F-4836-9B47-F9B2857D3D09}.PerfTest|x86.ActiveCfg = PerfTest|Win32
 		{AA43BF49-753F-4836-9B47-F9B2857D3D09}.PerfTest|x86.Build.0 = PerfTest|Win32
+		{AA43BF49-753F-4836-9B47-F9B2857D3D09}.Release|ARM64.ActiveCfg = Release|ARM64
+		{AA43BF49-753F-4836-9B47-F9B2857D3D09}.Release|ARM64.Build.0 = Release|ARM64
 		{AA43BF49-753F-4836-9B47-F9B2857D3D09}.Release|x64.ActiveCfg = Release|x64
 		{AA43BF49-753F-4836-9B47-F9B2857D3D09}.Release|x64.Build.0 = Release|x64
 		{AA43BF49-753F-4836-9B47-F9B2857D3D09}.Release|x86.ActiveCfg = Release|Win32

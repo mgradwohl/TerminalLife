@@ -750,11 +750,11 @@ int main()
 
     // simulation loop
 #ifdef _DEBUG
-    int msSleep = 300;
+    int msSleep = 100;
     bool fFate = true;
     bool fScore = true;
     bool fIncremental = true;
-    bool fOldAge = true;
+    bool fOldAge = false;
 #else
     int msSleep = 0;
     bool fFate = false;
