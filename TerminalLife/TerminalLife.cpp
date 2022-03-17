@@ -649,59 +649,122 @@ std::ostream& operator<<(std::ostream& stream, Board& board)
     return stream;
 }
 
+class ConsoleConfig
+{
+private:
+    DWORD _dwOriginalOutMode = 0;
+    HANDLE _hOut = 0;
+    CONSOLE_SCREEN_BUFFER_INFO _csbi = {};
+
+public:
+    ConsoleConfig()
+    {
+        // make sure Windows Console and C++ runtime are set for utf8
+        auto UTF8 = std::locale("en_US.UTF-8");
+        std::locale::global(UTF8);
+        std::cout.imbue(UTF8);
+        setlocale(LC_ALL, "en_us.utf8");
+        SetConsoleOutputCP(CP_UTF8);
+
+        // don't sync the C++ streams to the C streams, for performance
+        std::ios::sync_with_stdio(false);
+    }
+
+    bool ConsoleInit()
+    {
+        // Set output mode to handle virtual terminal sequences
+        _hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+        if (_hOut == INVALID_HANDLE_VALUE)
+        {
+            std::cout << "TerminalLife: Error setting console preferences. 0x01" << std::endl;
+            return false;
+        }
+
+        if (!GetConsoleMode(_hOut, &_dwOriginalOutMode))
+        {
+            std::cout << "TerminalLife: Error setting console preferences. 0x02" << std::endl;
+            return false;
+        }
+
+        DWORD dwRequestedOutModes = ENABLE_VIRTUAL_TERMINAL_PROCESSING /*| DISABLE_NEWLINE_AUTO_RETURN*/;
+
+        DWORD dwOutMode = _dwOriginalOutMode | dwRequestedOutModes;
+        if (!SetConsoleMode(_hOut, dwOutMode))
+        {
+            // we failed to set both modes, try to step down mode gracefully.
+            dwRequestedOutModes = ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+            dwOutMode = _dwOriginalOutMode | dwRequestedOutModes;
+            if (!SetConsoleMode(_hOut, dwOutMode))
+            {
+                std::cout << "TerminalLife: Error setting console preferences. 0x03" << std::endl;
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void PrintIntro()
+    {
+        system("CLS");
+        std::cout << "\x1b[mWelcome to TerminalLife, resize your console to get the biggest simulation, then press [ENTER]" << std::endl;
+        std::cout << "\x1b[mHit ENTER to start, SPACE to pause/unpause, ESC to quit, [+] and [-] to change speed, [S] to show details, [F] to show cell fates, and [I] to toggle incremental vs. continuous simulation" << std::endl;
+        std::cin.get();
+
+        GetConsoleScreenBufferInfo(_hOut, &_csbi);
+    }
+
+    void Clear()
+    {
+        system("CLS");
+    }
+
+    int Width()
+    {
+        return _csbi.dwSize.X;
+    }
+
+    int Height()
+    {
+        return _csbi.dwSize.Y;
+    }
+
+    void DrawBegin()
+    {
+        Clear();
+
+        // turn off the cursor
+        std::cout << "\x1b[?25l" << std::endl;
+
+        //untie cin and cout, since we won't use cin anymore and this improves performance
+        std::cin.tie(nullptr);
+    }
+
+    void SetPositionHome()
+    {
+        static COORD coordScreen = { 0, 0 };
+        SetConsoleCursorPosition(_hOut, coordScreen);
+    }
+
+    ~ConsoleConfig()
+    {
+        SetConsoleMode(_hOut, _dwOriginalOutMode);
+    }
+};
+
 int main()
 {
-    // make sure Windows Console and C++ runtime are set for utf8
-    auto UTF8 = std::locale("en_US.UTF-8");
-    std::locale::global(UTF8);
-    std::cout.imbue(UTF8);
-    setlocale(LC_ALL, "en_us.utf8");
-    SetConsoleOutputCP(CP_UTF8);
+    ConsoleConfig console;
+    if (!console.ConsoleInit())
+        return -1;
 
-    // don't sync the C++ streams to the C streams, for performance
-    std::ios::sync_with_stdio(false);
+    console.PrintIntro();
 
-    // Set output mode to handle virtual terminal sequences
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (hOut == INVALID_HANDLE_VALUE)
-    {
-        return false;
-    }
-
-    DWORD dwOriginalOutMode = 0;
-    if (!GetConsoleMode(hOut, &dwOriginalOutMode))
-    {
-        return false;
-    }
-
-    DWORD dwRequestedOutModes = ENABLE_VIRTUAL_TERMINAL_PROCESSING /*| DISABLE_NEWLINE_AUTO_RETURN*/;
-
-    DWORD dwOutMode = dwOriginalOutMode | dwRequestedOutModes;
-    if (!SetConsoleMode(hOut, dwOutMode))
-    {
-        // we failed to set both modes, try to step down mode gracefully.
-        dwRequestedOutModes = ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-        dwOutMode = dwOriginalOutMode | dwRequestedOutModes;
-        if (!SetConsoleMode(hOut, dwOutMode))
-        {
-            // Failed to set any VT mode, can't do anything here.
-            return -1;
-        }
-    }
-
-    system("CLS");
-    std::cout << "\x1b[mWelcome to TerminalLife, resize your console to get the biggest simulation, then press [ENTER]" << std::endl;
-    std::cout << "\x1b[mHit ENTER to start, SPACE to pause/unpause, ESC to quit, [+] and [-] to change speed, [S] to show details, [F] to show cell fates, and [I] to toggle incremental vs. continuous simulation" << std::endl;
-    std::cin.get();
-
-    CONSOLE_SCREEN_BUFFER_INFO csbi = {};
-    GetConsoleScreenBufferInfo(hOut, &csbi);
-#ifdef _DEBUG
     // small boards are easier for debugging
-    Board board(60, 30);
-#else
-    Board board(csbi.dwSize.X/2, csbi.dwSize.Y - 5);
-#endif
+    #ifdef _DEBUG
+        Board board(60, 30);
+    #else
+        Board board(console.Width() / 2, console.Height() - 5);
+    #endif
 
     // Rulesets
     // using example from https://en.cppreference.com/w/cpp/utility/functional/bind
@@ -739,29 +802,22 @@ int main()
     std::cout << "Randomly populating cells for " << n << " generations" << std::endl;
 	board.RandomizeBoard(n);
 
-    system("CLS"); // Windows only
-    COORD coordScreen = { 0, 0 };
-
-    // turn off the cursor
-    std::cout << "\x1b[?25l" << std::endl;
-
-    //untie cin and cout, since we won't use cin anymore and this improves performance
-    std::cin.tie(nullptr);
+    console.DrawBegin();
 
     // simulation loop
-#ifdef _DEBUG
-    int msSleep = 100;
-    bool fFate = true;
-    bool fScore = true;
-    bool fIncremental = true;
-    bool fOldAge = false;
-#else
-    int msSleep = 0;
-    bool fFate = false;
-    bool fScore = false;
-    bool fIncremental = false;
-    bool fOldAge = false;
-#endif
+    #ifdef _DEBUG
+        int msSleep = 100;
+        bool fFate = true;
+        bool fScore = true;
+        bool fIncremental = true;
+        bool fOldAge = false;
+    #else
+        int msSleep = 0;
+        bool fFate = false;
+        bool fScore = false;
+        bool fIncremental = false;
+        bool fOldAge = false;
+    #endif
 
     // used for an attempt to ensure that keystrokes in other apps don't impact this one
     //HWND hWndC = GetActiveWindow();
@@ -806,8 +862,10 @@ int main()
             Cell::SetOldAge(-1);
         }
 
-        SetConsoleCursorPosition(hOut, coordScreen);
+        console.SetPositionHome();
 
+
+        // console.PrintBoardHeader()
         if (fScore)
         {
             std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Life Span: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
@@ -843,7 +901,7 @@ int main()
         // this will show the user the pending changes to the board (born, dying, etc.)
         if (fFate)
         {
-            SetConsoleCursorPosition(hOut, coordScreen);
+            console.SetPositionHome();
             if (fScore)
             {
                 std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Life Span: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
@@ -878,5 +936,6 @@ int main()
     }
 
     std::cout << "\x1b[mThanks for the simulation" << std::endl;
-    SetConsoleMode(hOut, dwOriginalOutMode);
+
+    // console dtor will restore the console
 }
