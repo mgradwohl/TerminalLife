@@ -745,9 +745,100 @@ public:
         SetConsoleCursorPosition(_hOut, coordScreen);
     }
 
+    void SetPosition()
+    {
+        static COORD coordScreen = { 0, 5 };
+        SetConsoleCursorPosition(_hOut, coordScreen);
+    }
+
     ~ConsoleConfig()
     {
         SetConsoleMode(_hOut, _dwOriginalOutMode);
+    }
+};
+
+class DrawOptions
+{
+private:
+    // initial options
+    #ifdef _DEBUG
+        int _msSleep = 50;
+        bool _fFate = true;
+        bool _fScore = true;
+        bool _fIncremental = false;
+        bool _fOldAge = false;
+    #else
+        int _msSleep = 0;
+        bool _fFate = false;
+        bool _fScore = true;
+        bool _fIncremental = false;
+        bool _fOldAge = false;
+    #endif
+
+public:
+    DrawOptions()
+    {}
+
+    ~DrawOptions()
+    {}
+
+    int Delay()
+    {
+        return _msSleep;
+    }
+
+    bool Fate()
+    {
+        return _fFate;
+    }
+
+    bool Score()
+    {
+        return _fScore;
+    }
+
+    bool Incremental()
+    {
+        return _fIncremental;
+    }
+
+    int OldAge()
+    {
+        if (_fOldAge)
+            return 80;
+        else
+            return -1;
+    }
+
+    bool CheckKeyState()
+    {
+        if (GetAsyncKeyState(VK_ESCAPE) & 0x01)
+        {
+            return false;
+        }
+
+        if (GetAsyncKeyState(VK_OEM_PLUS) & 0x01)
+            _msSleep += 100;
+
+        if (GetAsyncKeyState(VK_F1) & 0x01)
+            _fOldAge = !_fOldAge;
+
+        if (GetAsyncKeyState(VK_OEM_MINUS) & 0x01)
+        {
+            _msSleep -= 100;
+            if (_msSleep < 1) _msSleep = 0;
+        }
+
+        if (GetAsyncKeyState(0x46) & 0x01)
+            _fFate = !_fFate;
+
+        if (GetAsyncKeyState(0x53) & 0x01)
+            _fScore = !_fScore;
+
+        if (GetAsyncKeyState(0x49) & 0x01)
+            _fIncremental = !_fIncremental;
+
+        return true;
     }
 };
 
@@ -755,7 +846,7 @@ int main()
 {
     ConsoleConfig console;
     if (!console.ConsoleInit())
-        return -1;
+        exit(-1);
 
     console.PrintIntro();
 
@@ -803,85 +894,34 @@ int main()
 	board.RandomizeBoard(n);
 
     console.DrawBegin();
+    DrawOptions options;
 
     // simulation loop
-    #ifdef _DEBUG
-        int msSleep = 100;
-        bool fFate = true;
-        bool fScore = true;
-        bool fIncremental = true;
-        bool fOldAge = false;
-    #else
-        int msSleep = 0;
-        bool fFate = false;
-        bool fScore = false;
-        bool fIncremental = false;
-        bool fOldAge = false;
-    #endif
-
-    // used for an attempt to ensure that keystrokes in other apps don't impact this one
-    //HWND hWndC = GetActiveWindow();
-    //HWND hWndF = GetForegroundWindow();
     while (true)
     {
-        //if (GetConsoleWindow() == GetFocus())
-        //{
-            if (GetAsyncKeyState(VK_ESCAPE) & 0x01)
-            {
-                break;
-            }
-
-            if (GetAsyncKeyState(VK_OEM_PLUS) & 0x01)
-                msSleep += 100;
-
-            if (GetAsyncKeyState(VK_F1) & 0x01)
-                fOldAge = !fOldAge;
-
-            if (GetAsyncKeyState(VK_OEM_MINUS) & 0x01)
-            {
-                msSleep -= 100;
-                if (msSleep < 1) msSleep = 0;
-            }
-
-            if (GetAsyncKeyState(0x46) & 0x01)
-                fFate = !fFate;
-
-            if (GetAsyncKeyState(0x53) & 0x01)
-                fScore = !fScore;
-
-            if (GetAsyncKeyState(0x49) & 0x01)
-                fIncremental = !fIncremental;
-        //}
-
-        if (fOldAge)
-        {
-            Cell::SetOldAge(80);
-        }
-        else
-        {
-            Cell::SetOldAge(-1);
-        }
-
         console.SetPositionHome();
 
+        if (!options.CheckKeyState())
+            exit(0);
 
-        // console.PrintBoardHeader()
-        if (fScore)
+        // options.PrintBoardHeader()
+        if (options.Score())
         {
             std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Life Span: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
         }
         else std::cout << "\x1b[2K\n";
 
-        if (fIncremental)
+        if (options.Incremental())
         {
             std::cout << "\x1b[mHit SPACE for next screen, [I] to continuously update\n\n" ;
         }
         else std::cout << "\x1b[2K\n";
 
         // print the board to the console AND flush the stream
+        console.SetPositionBoard();
         std::cout << board << std::endl;
 
-        if (fIncremental)
+        if (options.Incremental())
         {
             bool Paused = true;
             while (Paused)
@@ -892,23 +932,24 @@ int main()
                 }  
             }
         }
-        else Sleep(msSleep);
+        else Sleep(options.Delay());
 
         // PICK YOUR RULESET HERE
         // this calls a Function with rules that determine the state of the cells in the next generation, without changing the cells
+        Cell::SetOldAge(options.OldAge());
         board.UpdateBoard(H);
 
         // this will show the user the pending changes to the board (born, dying, etc.)
-        if (fFate)
+        if (options.Fate())
         {
             console.SetPositionHome();
-            if (fScore)
+            if (options.Score())
             {
                 std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Life Span: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
             }
             else std::cout << "\x1b[2K\n";
 
-            if (fIncremental)
+            if (options.Incremental())
             {
                  std::cout << "\x1b[mHit SPACE for next screen, [I] to continuously update\n\n";
             }
@@ -917,7 +958,7 @@ int main()
             // print the board with Fates to the console AND flush the stream
             std::cout << board << std::endl;
 
-            if (fIncremental)
+            if (options.Incremental())
             {
                 bool Paused = true;
                 while (Paused)
@@ -928,7 +969,7 @@ int main()
                     }  
                 }
             }
-            else Sleep(msSleep);
+            else Sleep(options.Delay());
         }
 
         // this applies the changes that were determined by the ruleset called by Board::UpdateBoard();
