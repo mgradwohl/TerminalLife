@@ -730,13 +730,13 @@ public:
 
     void DrawBegin()
     {
-        Clear();
-
         // turn off the cursor
         std::cout << "\x1b[?25l" << std::endl;
 
         //untie cin and cout, since we won't use cin anymore and this improves performance
         std::cin.tie(nullptr);
+
+        Clear();
     }
 
     void SetPositionHome()
@@ -748,6 +748,12 @@ public:
     void SetPositionBoard()
     {
         static COORD coordScreen = { 0, 5 };
+        SetConsoleCursorPosition(_hOut, coordScreen);
+    }
+
+    void SetPosition(short x, short y)
+    {
+        static COORD coordScreen = { x, y };
         SetConsoleCursorPosition(_hOut, coordScreen);
     }
 
@@ -865,7 +871,7 @@ int main()
     #ifdef _DEBUG
         Board board(60, 30);
     #else
-        Board board(console.Width() / 2, console.Height() - 5);
+        Board board(console.Width() / 2, console.Height() - 10);
     #endif
 
     // Rulesets
@@ -905,24 +911,24 @@ int main()
 	board.RandomizeBoard(n);
 
     console.DrawBegin();
-    DrawOptions options;
-
+    
     // simulation loop
     while (true)
     {
         console.SetPositionHome();
 
-        if (!options.CheckKeyState())
-            exit(0);
+        if (!DrawOptions::Get().CheckKeyState())
+            break;// exit(0);
 
-        // options.PrintBoardHeader()
-        if (options.Score())
+        // DrawOptions::Get().PrintBoardHeader();
+        // would like to move these into Board or DrawOptions
+        if (DrawOptions::Get().Score())
         {
             std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << DrawOptions::Get().Delay() << ". Life Span: " << DrawOptions::Get().OldAge() << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
         }
         else std::cout << "\x1b[2K\n";
 
-        if (options.Incremental())
+        if (DrawOptions::Get().Incremental())
         {
             std::cout << "\x1b[mHit SPACE for next screen, [I] to continuously update\n\n" ;
         }
@@ -932,7 +938,7 @@ int main()
         console.SetPositionBoard();
         std::cout << board << std::endl;
 
-        if (options.Incremental())
+        if (DrawOptions::Get().Incremental())
         {
             bool Paused = true;
             while (Paused)
@@ -943,33 +949,34 @@ int main()
                 }  
             }
         }
-        else Sleep(options.Delay());
+        else Sleep(DrawOptions::Get().Delay());
 
         // PICK YOUR RULESET HERE
         // this calls a Function with rules that determine the state of the cells in the next generation, without changing the cells
-        Cell::SetOldAge(options.OldAge());
+        Cell::SetOldAge(DrawOptions::Get().OldAge());
         board.UpdateBoard(H);
 
         // this will show the user the pending changes to the board (born, dying, etc.)
-        if (options.Fate())
+        if (DrawOptions::Get().Fate())
         {
             console.SetPositionHome();
-            if (options.Score())
+            if (DrawOptions::Get().Score())
             {
                 std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << DrawOptions::Get().Delay()  << ". Life Span: " << DrawOptions::Get().OldAge() << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
             }
             else std::cout << "\x1b[2K\n";
 
-            if (options.Incremental())
+            if (DrawOptions::Get().Incremental())
             {
                  std::cout << "\x1b[mHit SPACE for next screen, [I] to continuously update\n\n";
             }
             else std::cout << "\x1b[2K\n";
 
             // print the board with Fates to the console AND flush the stream
+            console.SetPositionBoard();
             std::cout << board << std::endl;
 
-            if (options.Incremental())
+            if (DrawOptions::Get().Incremental())
             {
                 bool Paused = true;
                 while (Paused)
@@ -980,13 +987,14 @@ int main()
                     }  
                 }
             }
-            else Sleep(options.Delay());
+            else Sleep(DrawOptions::Get().Delay());
         }
 
         // this applies the changes that were determined by the ruleset called by Board::UpdateBoard();
         board.NextGeneration();
     }
 
+    console.Clear();
     std::cout << "\x1b[mThanks for the simulation" << std::endl;
 
     // console dtor will restore the console
