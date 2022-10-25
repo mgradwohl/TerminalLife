@@ -745,7 +745,7 @@ public:
         SetConsoleCursorPosition(_hOut, coordScreen);
     }
 
-    void SetPosition()
+    void SetPositionBoard()
     {
         static COORD coordScreen = { 0, 5 };
         SetConsoleCursorPosition(_hOut, coordScreen);
@@ -757,31 +757,42 @@ public:
     }
 };
 
+//DrawOptions DrawOptions::s_Instance;
+
 class DrawOptions
 {
+public:
+    static DrawOptions& Get()
+    {
+        static DrawOptions s_Instance;
+        return s_Instance;
+    }
+
+    DrawOptions() {}
+    DrawOptions(const DrawOptions&) = delete;
+
+    ~DrawOptions() {}
+
+
 private:
+    static DrawOptions s_Instance;
+
     // initial options
-    #ifdef _DEBUG
-        int _msSleep = 50;
-        bool _fFate = true;
-        bool _fScore = true;
-        bool _fIncremental = false;
-        bool _fOldAge = false;
-    #else
-        int _msSleep = 0;
-        bool _fFate = false;
-        bool _fScore = true;
-        bool _fIncremental = false;
-        bool _fOldAge = false;
-    #endif
+#ifdef _DEBUG
+    int _msSleep = 50;
+    bool _fFate = true;
+    bool _fScore = true;
+    bool _fIncremental = false;
+    bool _fOldAge = false;
+#else
+    int _msSleep = 0;
+    bool _fFate = false;
+    bool _fScore = true;
+    bool _fIncremental = false;
+    bool _fOldAge = false;
+#endif
 
 public:
-    DrawOptions()
-    {}
-
-    ~DrawOptions()
-    {}
-
     int Delay()
     {
         return _msSleep;
@@ -907,7 +918,7 @@ int main()
         // options.PrintBoardHeader()
         if (options.Score())
         {
-            std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Life Span: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
+            std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << DrawOptions::Get().Delay() << ". Life Span: " << DrawOptions::Get().OldAge() << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
         }
         else std::cout << "\x1b[2K\n";
 
@@ -945,7 +956,7 @@ int main()
             console.SetPositionHome();
             if (options.Score())
             {
-                std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Life Span: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
+                std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << DrawOptions::Get().Delay()  << ". Life Span: " << DrawOptions::Get().OldAge() << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
             }
             else std::cout << "\x1b[2K\n";
 
