@@ -24,38 +24,23 @@ private:
     inline static int OldAge = -1;
 
 public:
+    //Cell(const Cell&) = delete;
+    ~Cell() = default;
+    Cell const& operator=(Cell& cell) = delete;
+
     Cell() : _state(State::Dead), _age(0), _x(0), _y(0), _neighbors(0)
     {
     }
 
-    Cell(int x, int y) : _state(State::Dead), _age(0), _x(x), _y(y), _neighbors(0)
-    {
-    }
 
-    Cell(State state) : _state(state), _x(0), _y(0), _neighbors(0)
-    {
-        if (_state == Cell::State::Born) _age = 0;
-    }
-
-    // the compiler will not let me delete the copy constructor, AND when I implement them
-    // they don't seem to be called
-    Cell(const Cell& c)
-        : _state(c._state), _age(c._age), _x(c._x), _y(c._y), _neighbors(c._y)
-    {
-        std::cout << "Cell const copy constructor" << std::endl;
-        std::cin.get();
-    }
-
-    Cell(Cell& c)
-        : _state(c._state), _age(c._age), _x(c._x), _y(c._y), _neighbors(c._y)
-    {
-        std::cout << "Cell copy constructor" << std::endl;
-        std::cin.get();
-    }
-
-    ~Cell() = default;
-    Cell const& operator=(Cell& cell) = delete;
-    //Cell(Cell& cell) = delete;
+    //// the compiler will not let me delete the copy constructor, AND when I implement them
+    //// they don't seem to be called
+    //Cell(const Cell& c)
+    //    : _state(c._state), _age(c._age), _x(c._x), _y(c._y), _neighbors(c._y)
+    //{
+    //    std::cout << "Cell const copy constructor" << std::endl;
+    //    std::cin.get();
+    //}
 
     static void SetOldAge(int age)
     {
@@ -221,13 +206,6 @@ public:
 
     auto GetEmojiStateString() const
     {
-        //static const std::wstring strDead(L" ");
-        //static const std::wstring strLive(L"\x1b[mO");
-        //static const std::wstring strBorn(L"\x1b[32mo");
-        //static const std::wstring strDying(L"\x1b[31mo");
-        //static const std::wstring strOld(L"\x1b[31mx");
-        //static const std::wstring strUnkown(L"\x1b[31m?");
-
         static auto cDead    = u8"🖤\0";
         static auto cLive    = u8"😁\0";
         static auto cBorn    = u8"💕\0";
@@ -309,6 +287,11 @@ private:
     int _x, _y;
 
 public:
+    Board(const Board& b) = delete;
+    Board(Board& b) = delete;
+    ~Board() = default;
+    Board const& operator=(Board& b) = delete;
+
     Board(int width, int height)
         : _width(width), _height(height), _size(width* height), _generation(0), _x(0), _y(0)
     {
@@ -322,15 +305,6 @@ public:
             }
         }
     }
-
-    //Board(const Board& b)
-    //    : _width(b._width), _height(b._height), _size(b._size), _generation(b._generation), _x(b._x), _y(b._y)
-    //{
-    //}
-
-    Board(Board& b) = delete;
-    ~Board() = default;
-    Board const& operator=(Board& b) = delete;
 
     int Generation() const
     {
@@ -629,9 +603,11 @@ public:
     }
 };
 
+// optiimzed to never use std::endl until the full board is done printing
 std::ostream& operator<<(std::ostream& stream, Board& board)
 {
     static std::u8string str( ((board.Width() + 2) * board.Height()) + 1, ' ');
+    // clear the static string of any leftover goo
     str.clear();
     
     for (int y = 0; y < board.Height(); y++)
@@ -643,7 +619,6 @@ std::ostream& operator<<(std::ostream& stream, Board& board)
         }
         str += u8"\r\n";
     }
-    str += u8"\0";
 
     printf((const char*)str.c_str());
     return stream;
