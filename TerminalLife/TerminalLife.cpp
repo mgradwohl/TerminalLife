@@ -353,9 +353,6 @@ std::ostream& operator<<(std::ostream& stream, Board& board)
     return stream;
 }
 
-
-//DrawOptions DrawOptions::s_Instance;
-
 class DrawOptions
 {
 public:
@@ -371,8 +368,8 @@ public:
     ~DrawOptions() {}
 
 
-private:
-    static DrawOptions s_Instance;
+//private:
+//    static DrawOptions s_Instance;
 
     // initial options
 #ifdef _DEBUG
@@ -453,17 +450,9 @@ public:
 int main()
 {
     ConsoleConfig console;
-    if (!console.ConsoleInit())
-        exit(-1);
-
     console.PrintIntro();
 
-    // small boards are easier for debugging
-    #ifdef _DEBUG
-        Board board(60, 30);
-    #else
-        Board board(console.Width() / 2, console.Height() - 10);
-    #endif
+    Board board(60, 30);
 
     // Randomly fill  spots for n 'generations'
     int n = board.Width() * board.Height() / 4;

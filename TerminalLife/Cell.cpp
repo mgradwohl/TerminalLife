@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "cell.h"
 
 void Cell::SetState(State state)
@@ -77,29 +77,29 @@ const char* Cell::GetStateString() const
 	}
 }
 
-const char8_t* Cell::GetEmojiStateString() const
+const std::u8string& Cell::GetEmojiStateString() const
 {
-	static char8_t cDead[8] = u8"🖤\0";
-	static char8_t cLive[8] = u8"😁\0";
-	static char8_t cBorn[8] = u8"💕\0";
-	static char8_t cOld[8] = u8"🤡\0";
-	static char8_t cDying[8] = u8"🤢\0";
-	static char8_t cUnknown[8] = u8"⁉️\0";
+	static std::u8string sDead(u8"🖤");
+	static std::u8string sLive(u8"😀");
+	static std::u8string sBorn(u8"💕");
+	static std::u8string sOld(u8"🤡");
+	static std::u8string sDying(u8"🤢");
+	static std::u8string sUnknown(u8"⁉️");
 
 	switch (_state)
 	{
-		case State::Dead: return cDead;
+		case State::Dead: return sDead;
 			break;
-		case State::Live: return cLive;
+		case State::Live: return sLive;
 			break;
-		case State::Born: return cBorn;
+		case State::Born: return sBorn;
 			break;
-		case State::Old: return cOld;
+		case State::Old: return sOld;
 			break;
-		case State::Dying: return cDying;
+		case State::Dying: return sDying;
 			break;
 		default:
-			return cUnknown;
+			return sUnknown;
 	}
 }
 

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 class Cell
 {
 public:
@@ -128,7 +128,7 @@ public:
 
     const char* GetStateString() const;
 
-    const char8_t* GetEmojiStateString() const;
+    const std::u8string& GetEmojiStateString() const;
 
     void NextGeneration();
 

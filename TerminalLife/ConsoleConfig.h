@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "pch.h"
 
 class ConsoleConfig
@@ -12,7 +12,6 @@ public:
     ConsoleConfig();
     ~ConsoleConfig();
 
-    bool ConsoleInit();
     void PrintIntro();
 
     void Clear()
