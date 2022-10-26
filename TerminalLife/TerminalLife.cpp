@@ -868,12 +868,12 @@ int main()
     // https://en.cppreference.com/w/cpp/utility/functional/mem_fn
     //auto C = std::mem_fn(&Board::ConwayFunction);
 
-    std::function<void(Cell& cell)> C = [&](Cell& cell)-> void
-    {
-        board.ConwayRules(cell);
-    };
+    //std::function<void(Cell& cell)> C = [&](Cell& cell)-> void
+    //{
+    //    board.ConwayRules(cell);
+    //};
 
-    //auto C = std::bind(&Board::ConwayRules, &board, std::placeholders::_1);
+    auto C = std::bind(&Board::ConwayRules, &board, std::placeholders::_1);
     auto D = std::bind(&Board::DayAndNightRules, &board, std::placeholders::_1);
     auto S = std::bind(&Board::SeedsRules, &board, std::placeholders::_1);
     auto B = std::bind(&Board::BriansBrainRules, &board, std::placeholders::_1);
@@ -929,7 +929,7 @@ int main()
         // PICK YOUR RULESET HERE
         // this calls a Function with rules that determine the state of the cells in the next generation, without changing the cells
         Cell::SetOldAge(DrawOptions::Get().OldAge());
-        board.UpdateBoard(H);
+        board.UpdateBoard(C);
 
         // this will show the user the pending changes to the board (born, dying, etc.)
         if (DrawOptions::Get().Fate())
