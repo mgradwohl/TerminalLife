@@ -1,300 +1,7 @@
 ﻿// TerminalLife.cpp
 #include "pch.h"
-
-class Cell
-{
-public:
-    // in many implementations a new copy of the board is made
-    // and the new board is made by looking at the old board.
-    // I do this with five states: Dead, Born, Live, Old, Dying
-    // Born means "will be alive in the next generation"
-    // Dying means "will die in the next generation"
-    // Old means "about to die" if lifespans of cells are enabled
-    // an advantage is that the board never changes size after instantiation
-    enum class State { Dead, Born, Live, Old, Dying };
-
-private:
-    State _state;
-    int _age, _x, _y, _neighbors;
-    inline static int numDead = 0;
-    inline static int numLive = 0;
-    inline static int numBorn = 0;
-    inline static int numOld = 0;
-    inline static int numDying = 0;
-    inline static int OldAge = -1;
-
-public:
-    Cell() : _state(State::Dead), _age(0), _x(0), _y(0), _neighbors(0)
-    {
-    }
-
-    Cell(int x, int y) : _state(State::Dead), _age(0), _x(x), _y(y), _neighbors(0)
-    {
-    }
-
-    Cell(State state) : _state(state), _x(0), _y(0), _neighbors(0)
-    {
-        if (_state == Cell::State::Born) _age = 0;
-    }
-
-    // the compiler will not let me delete the copy constructor, AND when I implement them
-    // they don't seem to be called
-    Cell(const Cell& c)
-        : _state(c._state), _age(c._age), _x(c._x), _y(c._y), _neighbors(c._y)
-    {
-        std::cout << "Cell const copy constructor" << std::endl;
-        std::cin.get();
-    }
-
-    Cell(Cell& c)
-        : _state(c._state), _age(c._age), _x(c._x), _y(c._y), _neighbors(c._y)
-    {
-        std::cout << "Cell copy constructor" << std::endl;
-        std::cin.get();
-    }
-
-    ~Cell() = default;
-    Cell const& operator=(Cell& cell) = delete;
-    //Cell(Cell& cell) = delete;
-
-    static void SetOldAge(int age)
-    {
-        OldAge = age;
-    }
-
-    static int GetOldAge()
-    {
-        return OldAge;
-    }
-
-    static int GetDeadCount()
-    {
-        return numDead;
-    }
-
-    static int GetLiveCount()
-    {
-        return numLive;
-    }
-
-    static int GetBornCount()
-    {
-        return numBorn;
-    }
-
-    static int GetOldCount()
-    {
-        return numOld;
-    }
-
-    static int GetDyingCount()
-    {
-        return numDying;
-    }
-
-    static bool ResetCounts()
-    {
-        numDead = 0;
-        numLive = 0;
-        numBorn = 0;
-        numDying = 0;
-        numOld = 0;
-        return true;
-    }
-
-    void SetXY(int x, int y)
-    {
-        _x = x;
-        _y = y;
-    }
-
-    int X() const
-    {
-        return _x;
-    }
-
-    int Y() const
-    {
-        return _y;
-    }
-
-    int Neighbors() const
-    {
-        return _neighbors;
-    }
-
-    void SetNeighbors(int n)
-    {
-        _neighbors = n;
-    }
-
-    void SetAge(int age)
-    {
-        _age = age;
-    }
-
-    int Age() const
-    {
-        return _age;
-    }
-
-    void SetState(State state)
-    {
-        _state = state;
-
-        switch (_state)
-        {
-            case Cell::State::Dead:
-            {
-                numDead++;
-                _age = 0;
-                break;
-            }
-            case Cell::State::Live: numLive++;
-                break;
-            case Cell::State::Born:
-            {
-                numBorn++;
-                _age = 0;
-                break;
-            }
-            case Cell::State::Old: numOld++;
-                break;
-            case Cell::State::Dying: numDying++;
-                break;
-            default: 
-                // do nothing
-                break;
-        }
-    }
-
-    State GetState() const
-    {
-        return _state;
-    }
-
-    bool IsAlive() const
-    {
-        if (_state == Cell::State::Live || _state == Cell::State::Dying || _state == Cell::State::Old)
-        {
-            return true;
-        }
-        return false;
-    }
-
-    bool IsAliveNotDying() const
-    {
-        if (_state == Cell::State::Live)
-        {
-            return true;
-        }
-        return false;
-    }
-
-    bool IsDead() const
-    {
-        if (_state == Cell::State::Dead || _state == Cell::State::Born)
-        {
-            return true;
-        }
-        return false;
-    }
-
-    const char* GetStateString() const
-    {
-        switch (_state)
-        {
-        case State::Dead: return " ";
-            break;
-        case State::Born: return "o";
-            break;
-        case State::Live: return "O";
-            break;
-        case State::Old: return "x";
-            break;
-        case State::Dying: return ".";
-            break;
-        default:
-            return "?";
-        }
-    }
-
-    auto GetEmojiStateString() const
-    {
-        //static const std::wstring strDead(L" ");
-        //static const std::wstring strLive(L"\x1b[mO");
-        //static const std::wstring strBorn(L"\x1b[32mo");
-        //static const std::wstring strDying(L"\x1b[31mo");
-        //static const std::wstring strOld(L"\x1b[31mx");
-        //static const std::wstring strUnkown(L"\x1b[31m?");
-
-        static auto cDead    = u8"🖤\0";
-        static auto cLive    = u8"😁\0";
-        static auto cBorn    = u8"💕\0";
-        static auto cOld     = u8"🤡\0";
-        static auto cDying   = u8"🤢\0";
-        static auto cUnknown = u8"⁉️\0";
-
-        switch (_state)
-        {
-            case State::Dead: return cDead;
-                break;
-            case State::Live: return cLive;
-                break;
-            case State::Born: return cBorn;
-                break;
-            case State::Old: return cOld;
-                break;
-            case State::Dying: return cDying;
-                break;
-            default:
-                return cUnknown;
-        }
-    }
-
-    void NextGeneration()
-    {
-        if (_state == Cell::State::Dead)
-        {
-            // no birthday for you
-            return;
-        }
-
-        if (_state == Cell::State::Born)
-        {
-            SetState(Cell::State::Live);
-        }
-
-        if (_state == Cell::State::Dying)
-        {
-            SetState(Cell::State::Dead);
-        }
-
-        _age++;
-    }
-
-    void KillOldCell()
-    {
-        // we only enforce this rule if age > 0
-        if (Cell::OldAge > 0)
-        {
-            if (_age ==  Cell::OldAge - 2)
-            {
-                // mark it as old, about to die
-                SetState(Cell::State::Old);
-            }
-            else if (_age == Cell::OldAge - 1)
-            {
-                // mark it as old, about to die
-                SetState(Cell::State::Dying);
-            }
-            else if (_age >= Cell::OldAge)
-            {
-                SetState(Cell::State::Dead);
-            }
-        }
-    }
-};
+#include "cell.h"
+#include "ConsoleConfig.h"
 
 // for visualization purposes (0,0) is the top left.
 // as x increases move right, as y increases move down
@@ -309,6 +16,11 @@ private:
     int _x, _y;
 
 public:
+    Board(const Board& b) = delete;
+    Board(Board& b) = delete;
+    ~Board() = default;
+    Board const& operator=(Board& b) = delete;
+
     Board(int width, int height)
         : _width(width), _height(height), _size(width* height), _generation(0), _x(0), _y(0)
     {
@@ -322,15 +34,6 @@ public:
             }
         }
     }
-
-    //Board(const Board& b)
-    //    : _width(b._width), _height(b._height), _size(b._size), _generation(b._generation), _x(b._x), _y(b._y)
-    //{
-    //}
-
-    Board(Board& b) = delete;
-    ~Board() = default;
-    Board const& operator=(Board& b) = delete;
 
     int Generation() const
     {
@@ -629,9 +332,11 @@ public:
     }
 };
 
+// optiimzed to never use std::endl until the full board is done printing
 std::ostream& operator<<(std::ostream& stream, Board& board)
 {
     static std::u8string str( ((board.Width() + 2) * board.Height()) + 1, ' ');
+    // clear the static string of any leftover goo
     str.clear();
     
     for (int y = 0; y < board.Height(); y++)
@@ -643,187 +348,157 @@ std::ostream& operator<<(std::ostream& stream, Board& board)
         }
         str += u8"\r\n";
     }
-    str += u8"\0";
 
     printf((const char*)str.c_str());
     return stream;
 }
 
-int main()
+class DrawOptions
 {
-    // make sure Windows Console and C++ runtime are set for utf8
-    auto UTF8 = std::locale("en_US.UTF-8");
-    std::locale::global(UTF8);
-    std::cout.imbue(UTF8);
-    setlocale(LC_ALL, "en_us.utf8");
-    SetConsoleOutputCP(CP_UTF8);
-
-    // don't sync the C++ streams to the C streams, for performance
-    std::ios::sync_with_stdio(false);
-
-    // Set output mode to handle virtual terminal sequences
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (hOut == INVALID_HANDLE_VALUE)
+public:
+    static DrawOptions& Get()
     {
-        return false;
+        static DrawOptions s_Instance;
+        return s_Instance;
     }
 
-    DWORD dwOriginalOutMode = 0;
-    if (!GetConsoleMode(hOut, &dwOriginalOutMode))
-    {
-        return false;
-    }
+    DrawOptions() {}
+    DrawOptions(const DrawOptions&) = delete;
 
-    DWORD dwRequestedOutModes = ENABLE_VIRTUAL_TERMINAL_PROCESSING /*| DISABLE_NEWLINE_AUTO_RETURN*/;
+    ~DrawOptions() {}
 
-    DWORD dwOutMode = dwOriginalOutMode | dwRequestedOutModes;
-    if (!SetConsoleMode(hOut, dwOutMode))
-    {
-        // we failed to set both modes, try to step down mode gracefully.
-        dwRequestedOutModes = ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-        dwOutMode = dwOriginalOutMode | dwRequestedOutModes;
-        if (!SetConsoleMode(hOut, dwOutMode))
-        {
-            // Failed to set any VT mode, can't do anything here.
-            return -1;
-        }
-    }
 
-    system("CLS");
-    std::cout << "\x1b[mWelcome to TerminalLife, resize your console to get the biggest simulation, then press [ENTER]" << std::endl;
-    std::cout << "\x1b[mHit ENTER to start, SPACE to pause/unpause, ESC to quit, [+] and [-] to change speed, [S] to show details, [F] to show cell fates, and [I] to toggle incremental vs. continuous simulation" << std::endl;
-    std::cin.get();
+//private:
+//    static DrawOptions s_Instance;
 
-    CONSOLE_SCREEN_BUFFER_INFO csbi = {};
-    GetConsoleScreenBufferInfo(hOut, &csbi);
+    // initial options
 #ifdef _DEBUG
-    // small boards are easier for debugging
-    Board board(60, 30);
+    int _msSleep = 50;
+    bool _fFate = true;
+    bool _fScore = true;
+    bool _fIncremental = false;
+    bool _fOldAge = false;
 #else
-    Board board(csbi.dwSize.X/2, csbi.dwSize.Y - 5);
+    int _msSleep = 0;
+    bool _fFate = false;
+    bool _fScore = true;
+    bool _fIncremental = false;
+    bool _fOldAge = false;
 #endif
 
-    // Rulesets
-    // using example from https://en.cppreference.com/w/cpp/utility/functional/bind
-    // auto f3 = std::bind(&Foo::print_sum, &foo, 95, _1);
-
-    //this works
-    //void UpdateBoard(auto F)
-    //void ConwayFunction(Cell & cell)
-    //auto C = std::bind(&Board::ConwayFunction, &board, std::placeholders::_1);
-
-    //this works too
-    //std::function<void(Cell& cell)> C = [&](Cell& cell) -> void
-    //{
-    //    board.ConwayFunction(cell);
-    //};
-
-    //this should work but doesn't
-    // https://en.cppreference.com/w/cpp/utility/functional/mem_fn
-    //auto C = std::mem_fn(&Board::ConwayFunction);
-
-    std::function<void(Cell& cell)> C = [&](Cell& cell)-> void
+public:
+    int Delay()
     {
-        board.ConwayRules(cell);
-    };
+        return _msSleep;
+    }
 
-    //auto C = std::bind(&Board::ConwayRules, &board, std::placeholders::_1);
+    bool Fate()
+    {
+        return _fFate;
+    }
+
+    bool Score()
+    {
+        return _fScore;
+    }
+
+    bool Incremental()
+    {
+        return _fIncremental;
+    }
+
+    int OldAge()
+    {
+        if (_fOldAge)
+            return 80;
+        else
+            return -1;
+    }
+
+    bool CheckKeyState()
+    {
+        if (GetAsyncKeyState(VK_ESCAPE) & 0x01)
+        {
+            return false;
+        }
+
+        if (GetAsyncKeyState(VK_OEM_PLUS) & 0x01)
+            _msSleep += 100;
+
+        if (GetAsyncKeyState(VK_F1) & 0x01)
+            _fOldAge = !_fOldAge;
+
+        if (GetAsyncKeyState(VK_OEM_MINUS) & 0x01)
+        {
+            _msSleep -= 100;
+            if (_msSleep < 1) _msSleep = 0;
+        }
+
+        if (GetAsyncKeyState(0x46) & 0x01)
+            _fFate = !_fFate;
+
+        if (GetAsyncKeyState(0x53) & 0x01)
+            _fScore = !_fScore;
+
+        if (GetAsyncKeyState(0x49) & 0x01)
+            _fIncremental = !_fIncremental;
+
+        return true;
+    }
+};
+
+int main()
+{
+    ConsoleConfig console;
+    console.PrintIntro();
+
+    Board board(60, 30);
+
+    // Randomly fill  spots for n 'generations'
+    int n = board.Width() * board.Height() / 4;
+    std::cout << "Randomly populating cells for " << n << " generations" << std::endl;
+    board.RandomizeBoard(n);
+        
+    // Rulesets
+    auto C = std::bind(&Board::ConwayRules, &board, std::placeholders::_1);
     auto D = std::bind(&Board::DayAndNightRules, &board, std::placeholders::_1);
     auto S = std::bind(&Board::SeedsRules, &board, std::placeholders::_1);
     auto B = std::bind(&Board::BriansBrainRules, &board, std::placeholders::_1);
     auto H = std::bind(&Board::HighlifeRules, &board, std::placeholders::_1);
     auto L = std::bind(&Board::LifeWithoutDeathRules, &board, std::placeholders::_1);
 
-    // Randomly fill  spots for n 'generations'
-	int n = board.Width() * board.Height() / 4;
-    std::cout << "Randomly populating cells for " << n << " generations" << std::endl;
-	board.RandomizeBoard(n);
+    // pick your Ruleset here
+    auto Ruleset = C;
 
-    system("CLS"); // Windows only
-    COORD coordScreen = { 0, 0 };
-
-    // turn off the cursor
-    std::cout << "\x1b[?25l" << std::endl;
-
-    //untie cin and cout, since we won't use cin anymore and this improves performance
-    std::cin.tie(nullptr);
-
+    console.DrawBegin();
+    
     // simulation loop
-#ifdef _DEBUG
-    int msSleep = 300;
-    bool fFate = true;
-    bool fScore = true;
-    bool fIncremental = true;
-    bool fOldAge = true;
-#else
-    int msSleep = 0;
-    bool fFate = false;
-    bool fScore = false;
-    bool fIncremental = false;
-    bool fOldAge = false;
-#endif
-
-    // used for an attempt to ensure that keystrokes in other apps don't impact this one
-    //HWND hWndC = GetActiveWindow();
-    //HWND hWndF = GetForegroundWindow();
     while (true)
     {
-        //if (GetConsoleWindow() == GetFocus())
-        //{
-            if (GetAsyncKeyState(VK_ESCAPE) & 0x01)
-            {
-                break;
-            }
+        console.SetPositionHome();
 
-            if (GetAsyncKeyState(VK_OEM_PLUS) & 0x01)
-                msSleep += 100;
+        if (!DrawOptions::Get().CheckKeyState())
+            break;// exit(0);
 
-            if (GetAsyncKeyState(VK_F1) & 0x01)
-                fOldAge = !fOldAge;
-
-            if (GetAsyncKeyState(VK_OEM_MINUS) & 0x01)
-            {
-                msSleep -= 100;
-                if (msSleep < 1) msSleep = 0;
-            }
-
-            if (GetAsyncKeyState(0x46) & 0x01)
-                fFate = !fFate;
-
-            if (GetAsyncKeyState(0x53) & 0x01)
-                fScore = !fScore;
-
-            if (GetAsyncKeyState(0x49) & 0x01)
-                fIncremental = !fIncremental;
-        //}
-
-        if (fOldAge)
+        // DrawOptions::Get().PrintBoardHeader();
+        // would like to move these into Board or DrawOptions
+        if (DrawOptions::Get().Score())
         {
-            Cell::SetOldAge(80);
-        }
-        else
-        {
-            Cell::SetOldAge(-1);
-        }
-
-        SetConsoleCursorPosition(hOut, coordScreen);
-
-        if (fScore)
-        {
-            std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Life Span: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
+            std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << DrawOptions::Get().Delay() << ". Life Span: " << DrawOptions::Get().OldAge() << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
         }
         else std::cout << "\x1b[2K\n";
 
-        if (fIncremental)
+        if (DrawOptions::Get().Incremental())
         {
             std::cout << "\x1b[mHit SPACE for next screen, [I] to continuously update\n\n" ;
         }
         else std::cout << "\x1b[2K\n";
 
         // print the board to the console AND flush the stream
+        console.SetPositionBoard();
         std::cout << board << std::endl;
 
-        if (fIncremental)
+        if (DrawOptions::Get().Incremental())
         {
             bool Paused = true;
             while (Paused)
@@ -834,32 +509,32 @@ int main()
                 }  
             }
         }
-        else Sleep(msSleep);
+        else Sleep(DrawOptions::Get().Delay());
 
-        // PICK YOUR RULESET HERE
-        // this calls a Function with rules that determine the state of the cells in the next generation, without changing the cells
-        board.UpdateBoard(H);
+        Cell::SetOldAge(DrawOptions::Get().OldAge());
+        board.UpdateBoard(Ruleset);
 
         // this will show the user the pending changes to the board (born, dying, etc.)
-        if (fFate)
+        if (DrawOptions::Get().Fate())
         {
-            SetConsoleCursorPosition(hOut, coordScreen);
-            if (fScore)
+            console.SetPositionHome();
+            if (DrawOptions::Get().Score())
             {
-                std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << msSleep << ". Life Span: " << fOldAge << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
+                std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << DrawOptions::Get().Delay()  << ". Life Span: " << DrawOptions::Get().OldAge() << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
             }
             else std::cout << "\x1b[2K\n";
 
-            if (fIncremental)
+            if (DrawOptions::Get().Incremental())
             {
                  std::cout << "\x1b[mHit SPACE for next screen, [I] to continuously update\n\n";
             }
             else std::cout << "\x1b[2K\n";
 
             // print the board with Fates to the console AND flush the stream
+            console.SetPositionBoard();
             std::cout << board << std::endl;
 
-            if (fIncremental)
+            if (DrawOptions::Get().Incremental())
             {
                 bool Paused = true;
                 while (Paused)
@@ -870,13 +545,15 @@ int main()
                     }  
                 }
             }
-            else Sleep(msSleep);
+            else Sleep(DrawOptions::Get().Delay());
         }
 
         // this applies the changes that were determined by the ruleset called by Board::UpdateBoard();
         board.NextGeneration();
     }
 
+    console.Clear();
     std::cout << "\x1b[mThanks for the simulation" << std::endl;
-    SetConsoleMode(hOut, dwOriginalOutMode);
+
+    // console dtor will restore the console
 }
