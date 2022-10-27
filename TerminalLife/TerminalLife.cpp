@@ -452,7 +452,7 @@ int main()
     ConsoleConfig console;
     console.PrintIntro();
 
-    Board board(60, 30);
+    Board board(console.Width() / 2, console.Height() - 10);
 
     // Randomly fill  spots for n 'generations'
     int n = board.Width() * board.Height() / 4;
