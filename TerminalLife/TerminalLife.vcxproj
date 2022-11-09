@@ -358,6 +358,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Board.cpp" />
     <ClCompile Include="Cell.cpp" />
     <ClCompile Include="ConsoleConfig.cpp" />
     <ClCompile Include="pch.cpp">
@@ -371,6 +372,7 @@
     <ClCompile Include="TerminalLife.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Board.h" />
     <ClInclude Include="Cell.h" />
     <ClInclude Include="ConsoleConfig.h" />
     <ClInclude Include="pch.h" />
