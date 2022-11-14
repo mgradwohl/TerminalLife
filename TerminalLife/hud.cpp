@@ -36,8 +36,8 @@ bool HUD::CheckKeyState()
 void HUD::PrintIntro()
 {
 	//system("CLS");
-	std::cout << "\x1b[mWelcome to TerminalLife, resize your console to get the biggest simulation, then press [ENTER]" << std::endl;
-	std::cout << "\x1b[mHit ENTER to start, SPACE to pause/unpause, ESC to quit, [+] and [-] to change speed, [S] to show details, [F] to show cell fates, and [I] to toggle incremental vs. continuous simulation" << std::endl;
+	std::cout << "\x1b[mWelcome to TerminalLife\r\n\r\nResize your console to get the biggest simulation\r\n";
+	std::cout << "\x1b[mENTER to start\r\nSPACE to pause/unpause\r\nESC to quit\r\n[+] and [-] to change speed\r\n[S] to toggle the HUD\r\n[F] to show cell fates\r\n[I] to toggle incremental vs. continuous simulation" << std::endl;
 	std::cin.get();
 }
 

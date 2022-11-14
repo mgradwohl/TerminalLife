@@ -63,7 +63,7 @@ int main()
     }
 
     console.Clear();
-    std::cout << "\x1b[mThanks for the simulation" << std::endl;
+    std::cout << "\x1b[mThanks for the simulation!" << std::endl;
 
     // console dtor will restore the console
 }
