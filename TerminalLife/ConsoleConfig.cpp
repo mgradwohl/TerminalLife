@@ -54,18 +54,10 @@ ConsoleConfig::~ConsoleConfig()
 	SetConsoleMode(_hOut, _dwOriginalOutMode);
 }
 
-void ConsoleConfig::PrintIntro()
-{
-	system("CLS");
-	std::cout << "\x1b[mWelcome to TerminalLife, resize your console to get the biggest simulation, then press [ENTER]" << std::endl;
-	std::cout << "\x1b[mHit ENTER to start, SPACE to pause/unpause, ESC to quit, [+] and [-] to change speed, [S] to show details, [F] to show cell fates, and [I] to toggle incremental vs. continuous simulation" << std::endl;
-	std::cin.get();
-
-	GetConsoleScreenBufferInfo(_hOut, &_csbi);
-}
-
 void ConsoleConfig::DrawBegin()
 {
+	GetConsoleScreenBufferInfo(_hOut, &_csbi);
+
 	// turn off the cursor
 	std::cout << "\x1b[?25l" << std::endl;
 

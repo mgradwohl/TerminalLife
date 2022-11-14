@@ -60,7 +60,7 @@ public:
         return _board[_x + (_y * _width)];
     }
 
-    int CountLiveNeighbors(Cell& cell);
+    int CountLiveAndDyingNeighbors(Cell& cell);
 
     int CountLiveNotDyingNeighbors(Cell& cell);
 
@@ -77,7 +77,7 @@ public:
             for (int x = 0; x < Width(); x++)
             {
                 Cell& cc = GetCell(x, y);
-                CountLiveNeighbors(cc);
+                CountLiveAndDyingNeighbors(cc);
                 F(cc);
                 cc.KillOldCell();
             }
@@ -94,5 +94,6 @@ public:
     void SeedsRules(Cell& cell) const;
 
     void BriansBrainRules(Cell& cell) const;
+    void PrintBoard();
 };
 

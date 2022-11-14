@@ -12,8 +12,6 @@ public:
     ConsoleConfig();
     ~ConsoleConfig();
 
-    void PrintIntro();
-
     void Clear()
     {
         system("CLS");

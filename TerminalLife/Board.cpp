@@ -3,6 +3,27 @@
 #include "pch.h"
 #include "Board.h"
 
+// optimized to never use std::endl until the full board is done printing
+std::ostream& operator<<(std::ostream& stream, Board& board)
+{
+	static std::u8string str(((board.Width() + 2) * board.Height()) + 1, ' ');
+	// clear the static string of any leftover goo
+	str.clear();
+
+	for (int y = 0; y < board.Height(); y++)
+	{
+		for (int x = 0; x < board.Width(); x++)
+		{
+			const Cell& cell = board.GetCell(x, y);
+			str += cell.GetEmojiStateString();
+		}
+		str += u8"\r\n";
+	}
+
+	printf((const char*)str.c_str());
+	return stream;
+}
+
 Board::Board(int width, int height)
 	: _width(width), _height(height), _size(width* height), _generation(0), _x(0), _y(0)
 {
@@ -17,7 +38,12 @@ Board::Board(int width, int height)
 	}
 }
 
-int Board::CountLiveNeighbors(Cell& cell)
+void Board::PrintBoard()
+{
+	std::cout << (*this) << std::endl;
+}
+
+int Board::CountLiveAndDyingNeighbors(Cell& cell)
 {
 	static int x = 0;
 	static int y = 0;
