@@ -15,7 +15,52 @@ public:
 
     ~HUD() = default;
 
+    static int Delay()
+    {
+        return Get()._msSleep;
+    }
 
+    static bool Fate()
+    {
+        return Get()._fFate;
+    }
+
+    static bool Score()
+    {
+        return Get()._fScore;
+    }
+
+    static bool Incremental()
+    {
+        return Get()._fIncremental;
+    }
+
+    static int OldAge()
+    {
+        return Get().OldAgeImpl();
+    }
+
+    static bool CheckKeyState()
+    {
+        return Get().CheckKeyStateImpl();
+    }
+
+    static void PrintIntro()
+    {
+        Get().PrintIntroImpl();
+    }
+    
+    static bool Update(const Board& board)
+    {
+        return Get().UpdateImpl(board);
+    }
+
+    static void HandleIncremental()
+    {
+        Get().HandleIncrementalImpl();
+    }
+
+private:
 #ifdef _DEBUG
     int _msSleep = 50;
     bool _fFate = true;
@@ -30,27 +75,7 @@ public:
     bool _fOldAge = false;
 #endif
 
-    int Delay() const
-    {
-        return _msSleep;
-    }
-
-    bool Fate() const
-    {
-        return _fFate;
-    }
-
-    bool Score() const
-    {
-        return _fScore;
-    }
-
-    bool Incremental() const
-    {
-        return _fIncremental;
-    }
-
-    int OldAge() const
+    int OldAgeImpl() const
     {
         if (_fOldAge)
             return 80;
@@ -58,8 +83,8 @@ public:
             return -1;
     }
 
-    bool CheckKeyState();
-    void PrintIntro() const;
-    bool Update(const Board& board) const;
-    void HandleIncremental() const;
+    bool CheckKeyStateImpl();
+    void PrintIntroImpl() const;
+    bool UpdateImpl(const Board& board) const;
+    void HandleIncrementalImpl() const;
 };

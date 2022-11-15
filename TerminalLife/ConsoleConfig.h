@@ -5,7 +5,7 @@ class ConsoleConfig
 {
 private:
     DWORD _dwOriginalOutMode = 0;
-    HANDLE _hOut = 0;
+    HANDLE _hOut = nullptr;
     CONSOLE_SCREEN_BUFFER_INFO _csbi = {};
 
 public:

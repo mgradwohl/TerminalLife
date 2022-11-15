@@ -2,7 +2,7 @@
 #include "hud.h"
 #include "Board.h"
 
-bool HUD::CheckKeyState()
+bool HUD::CheckKeyStateImpl ()
 {
 	if (GetAsyncKeyState(VK_ESCAPE) & 0x01)
 	{
@@ -33,25 +33,25 @@ bool HUD::CheckKeyState()
 	return true;
 }
 
-void HUD::PrintIntro() const 
+void HUD::PrintIntroImpl() const 
 {
 	std::cout << "\x1b[mWelcome to TerminalLife\r\n\r\nResize your console to get the biggest simulation\r\n";
 	std::cout << "\x1b[mENTER to start\r\nSPACE to pause/unpause\r\nESC to quit\r\n[+] and [-] to change speed\r\n[S] to toggle the HUD\r\n[F] to show cell fates\r\n[I] to toggle incremental vs. continuous simulation" << std::endl;
 	std::cin.get();
 }
 
-bool HUD::Update(const Board& board) const
+bool HUD::UpdateImpl(const Board& board) const
 {
-	if (!HUD::Get().CheckKeyState())
+	if (!HUD::CheckKeyState())
 		return false;
 
-	if (HUD::Get().Score())
+	if (HUD::Score())
 	{
-		std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << HUD::Get().Delay() << ". Life Span: " << HUD::Get().OldAge() << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
+		std::cout << "\x1b[mGeneration " << board.Generation() << ". Sleep: " << HUD::Delay() << ". Life Span: " << HUD::OldAge() << ". Alive: " << Cell::GetLiveCount() << ". Dead: " << Cell::GetDeadCount() << ". Born: " << Cell::GetBornCount() << ". Dying: " << Cell::GetDyingCount() << ". OldAge: " << Cell::GetOldCount() << ".\x1b[0K\n";
 	}
 	else std::cout << "\x1b[2K\n";
 
-	if (HUD::Get().Incremental())
+	if (HUD::Incremental())
 	{
 		std::cout << "\x1b[mHit SPACE for next screen, [I] to continuously update\n\n";
 	}
@@ -61,9 +61,9 @@ bool HUD::Update(const Board& board) const
 }
 
 
-void HUD::HandleIncremental() const
+void HUD::HandleIncrementalImpl() const
 {
-	if (HUD::Get().Incremental())
+	if (HUD::Incremental())
 	{
 		bool Paused = true;
 		while (Paused)
@@ -74,5 +74,5 @@ void HUD::HandleIncremental() const
 			}
 		}
 	}
-	else Sleep(HUD::Get().Delay());
+	else Sleep(HUD::Delay());
 }

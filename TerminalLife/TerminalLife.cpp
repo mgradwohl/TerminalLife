@@ -8,7 +8,7 @@
 int main()
 {
     ConsoleConfig console;
-    HUD::Get().PrintIntro();
+    HUD::PrintIntro();
     console.DrawBegin();
     Board board(console.Width() / 2, console.Height() - 10);
 
@@ -31,31 +31,31 @@ int main()
     while (true)
     {
         console.SetPositionHome();
-        if (!HUD::Get().Update(board))
+        if (!HUD::Update(board))
             break;
 
         // print the board to the console AND flush the stream
         console.SetPositionBoard();
         board.PrintBoard();
 
-        HUD::Get().HandleIncremental();
+        HUD::HandleIncremental();
 
         // TODO this is bad
-        Cell::SetOldAge(HUD::Get().OldAge());
+        Cell::SetOldAge(HUD::OldAge());
 
         board.UpdateBoard(Ruleset);
 
         // this will show the user the pending changes to the board (born, dying, etc.)
-        if (HUD::Get().Fate())
+        if (HUD::Fate())
         {
             console.SetPositionHome();
-            HUD::Get().Update(board);
+            HUD::Update(board);
 
             // print the board with Fates to the console AND flush the stream
             console.SetPositionBoard();
             board.PrintBoard();
 
-            HUD::Get().HandleIncremental();
+            HUD::HandleIncremental();
         }
 
         // this applies the changes that were determined by the ruleset called by Board::UpdateBoard();
