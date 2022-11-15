@@ -10,10 +10,10 @@ public:
         return s_Instance;
     }
 
-    HUD() {}
+    HUD() = default;
     HUD(const HUD&) = delete;
 
-    ~HUD() {}
+    ~HUD() = default;
 
 
 #ifdef _DEBUG
@@ -30,28 +30,27 @@ public:
     bool _fOldAge = false;
 #endif
 
-public:
-    int Delay()
+    int Delay() const
     {
         return _msSleep;
     }
 
-    bool Fate()
+    bool Fate() const
     {
         return _fFate;
     }
 
-    bool Score()
+    bool Score() const
     {
         return _fScore;
     }
 
-    bool Incremental()
+    bool Incremental() const
     {
         return _fIncremental;
     }
 
-    int OldAge()
+    int OldAge() const
     {
         if (_fOldAge)
             return 80;
@@ -60,7 +59,7 @@ public:
     }
 
     bool CheckKeyState();
-    void PrintIntro();
-    bool Update(Board& board);
-    void HandleIncremental();
+    void PrintIntro() const;
+    bool Update(const Board& board) const;
+    void HandleIncremental() const;
 };

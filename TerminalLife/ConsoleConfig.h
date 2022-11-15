@@ -12,17 +12,17 @@ public:
     ConsoleConfig();
     ~ConsoleConfig();
 
-    void Clear()
+    void Clear() const
     {
         system("CLS");
     }
 
-    int Width()
+    int Width() const
     {
         return _csbi.dwSize.X;
     }
 
-    int Height()
+    int Height() const
     {
         return _csbi.dwSize.Y;
     }

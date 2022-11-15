@@ -17,15 +17,15 @@ int main()
     board.RandomizeBoard(n);
     
     // Rulesets
-    auto C = std::bind(&Board::ConwayRules, &board, std::placeholders::_1);
-    auto D = std::bind(&Board::DayAndNightRules, &board, std::placeholders::_1);
-    auto S = std::bind(&Board::SeedsRules, &board, std::placeholders::_1);
-    auto B = std::bind(&Board::BriansBrainRules, &board, std::placeholders::_1);
-    auto H = std::bind(&Board::HighlifeRules, &board, std::placeholders::_1);
-    auto L = std::bind(&Board::LifeWithoutDeathRules, &board, std::placeholders::_1);
+    auto C = std::bind_front(&Board::ConwayRules, &board);
+    auto D = std::bind_front(&Board::DayAndNightRules, &board);
+    auto S = std::bind_front(&Board::SeedsRules, &board);
+    auto B = std::bind_front(&Board::BriansBrainRules, &board);
+    auto H = std::bind_front(&Board::HighlifeRules, &board);
+    auto L = std::bind_front(&Board::LifeWithoutDeathRules, &board);
 
     // pick your Ruleset here
-    auto& Ruleset = C;
+    auto const& Ruleset = C;
 
     // simulation loop
     while (true)

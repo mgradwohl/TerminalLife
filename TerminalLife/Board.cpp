@@ -132,8 +132,7 @@ void Board::RandomizeBoard(int n)
 		ry = ydis(gen);
 		ra = adis(gen);
 
-		Cell& cell = GetCell(rx, ry);
-		if (cell.GetState() == Cell::State::Dead)
+		if (Cell& cell = GetCell(rx, ry); cell.GetState() == Cell::State::Dead)
 		{
 			cell.SetState(Cell::State::Born);
 			cell.SetAge(ra);
@@ -141,22 +140,6 @@ void Board::RandomizeBoard(int n)
 		NextGeneration();
 	}
 }
-
-//// This form does not work: void UpdateBoard(std::function<void(Cell& cell)>& F)
-//// but using auto is magic
-//void Board::UpdateBoard(auto F)
-//{
-//	for (int y = 0; y < Height(); y++)
-//	{
-//		for (int x = 0; x < Width(); x++)
-//		{
-//			Cell& cc = GetCell(x, y);
-//			CountLiveNeighbors(cc);
-//			F(cc);
-//			cc.KillOldCell();
-//		}
-//	}
-//}
 
 void Board::ConwayRules(Cell& cell) const
 {
@@ -222,10 +205,10 @@ void Board::LifeWithoutDeathRules(Cell& cell) const
 		cell.SetState(Cell::State::Live);
 	}
 	else
-		if (cell.IsDead() && count == 3)
-		{
-			cell.SetState(Cell::State::Born);
-		}
+	if (cell.IsDead() && count == 3)
+	{
+		cell.SetState(Cell::State::Born);
+	}
 }
 
 void Board::HighlifeRules(Cell& cell) const
@@ -242,15 +225,15 @@ void Board::HighlifeRules(Cell& cell) const
 		cell.SetState(Cell::State::Live);
 	}
 	else
-		if (cell.IsDead() && ((count == 3) || (count == 6)))
-		{
-			cell.SetState(Cell::State::Born);
-		}
-		else
-			if (cell.IsAlive())
-			{
-				cell.SetState(Cell::State::Dying);
-			}
+	if (cell.IsDead() && ((count == 3) || (count == 6)))
+	{
+		cell.SetState(Cell::State::Born);
+	}
+	else
+	if (cell.IsAlive())
+	{
+		cell.SetState(Cell::State::Dying);
+	}
 }
 
 void Board::SeedsRules(Cell& cell) const
@@ -289,13 +272,13 @@ void Board::BriansBrainRules(Cell& cell) const
 		cell.SetState(Cell::State::Born);
 	}
 	else
-		if (cell.GetState() == Cell::State::Live)
-		{
-			cell.SetState(Cell::State::Dying);
-		}
-		else
-			if (cell.GetState() == Cell::State::Dying)
-			{
-				cell.SetState(Cell::State::Dead);
-			}
+	if (cell.GetState() == Cell::State::Live)
+	{
+		cell.SetState(Cell::State::Dying);
+	}
+	else
+	if (cell.GetState() == Cell::State::Dying)
+	{
+		cell.SetState(Cell::State::Dead);
+	}
 }

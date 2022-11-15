@@ -8,10 +8,12 @@ class Board
 private:
     // if I allocated this on the heap, I could get the size right with resize
     std::vector<Cell> _board;
-    int _width, _height;
+    int _width;
+    int _height;
     int _size;
     int _generation;
-    int _x, _y;
+    int _x;
+    int _y;
 
 public:
     Board(const Board& b) = delete;

@@ -6,7 +6,10 @@ public:
 
 private:
     State _state;
-    int _age, _x, _y, _neighbors;
+    int _age;
+    int _x;
+    int _y;
+    int _neighbors;
     inline static int numDead = 0;
     inline static int numLive = 0;
     inline static int numBorn = 0;
@@ -15,22 +18,13 @@ private:
     inline static int OldAge = -1;
 
 public:
-    //Cell(const Cell&) = delete;
-    ~Cell() = default;
-    Cell const& operator=(Cell& cell) = delete;
-
     Cell() : _state(State::Dead), _age(0), _x(0), _y(0), _neighbors(0)
     {
     }
 
-    //// the compiler will not let me delete the copy constructor, AND when I implement them
-    //// they don't seem to be called
-    //Cell(const Cell& c)
-    //    : _state(c._state), _age(c._age), _x(c._x), _y(c._y), _neighbors(c._y)
-    //{
-    //    std::cout << "Cell const copy constructor" << std::endl;
-    //    std::cin.get();
-    //}
+    Cell const& operator=(Cell& cell) = delete;
+
+    ~Cell() = default;
 
     static void SetOldAge(int age)
     {

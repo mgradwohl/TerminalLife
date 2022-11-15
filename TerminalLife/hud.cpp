@@ -33,15 +33,14 @@ bool HUD::CheckKeyState()
 	return true;
 }
 
-void HUD::PrintIntro()
+void HUD::PrintIntro() const 
 {
-	//system("CLS");
 	std::cout << "\x1b[mWelcome to TerminalLife\r\n\r\nResize your console to get the biggest simulation\r\n";
 	std::cout << "\x1b[mENTER to start\r\nSPACE to pause/unpause\r\nESC to quit\r\n[+] and [-] to change speed\r\n[S] to toggle the HUD\r\n[F] to show cell fates\r\n[I] to toggle incremental vs. continuous simulation" << std::endl;
 	std::cin.get();
 }
 
-bool HUD::Update(Board& board)
+bool HUD::Update(const Board& board) const
 {
 	if (!HUD::Get().CheckKeyState())
 		return false;
@@ -62,7 +61,7 @@ bool HUD::Update(Board& board)
 }
 
 
-void HUD::HandleIncremental()
+void HUD::HandleIncremental() const
 {
 	if (HUD::Get().Incremental())
 	{
